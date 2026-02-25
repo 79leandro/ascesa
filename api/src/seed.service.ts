@@ -23,7 +23,7 @@ export class SeedService implements OnModuleInit {
         update: {
           password: hashedPassword,
           role: 'ADMIN',
-          isActive: true,
+          status: 'ACTIVE',
         },
         create: {
           name: 'Administrador',
@@ -31,14 +31,8 @@ export class SeedService implements OnModuleInit {
           password: hashedPassword,
           cpf: '00000000000',
           phone: '00000000000',
-          birthDate: new Date('1990-01-01'),
-          address: 'Sede ASCESA',
-          city: 'Brasília',
-          state: 'DF',
-          zipCode: '70000000',
           role: 'ADMIN',
-          isActive: true,
-          memberNumber: 'ADMIN001',
+          status: 'ACTIVE',
         },
       });
 
