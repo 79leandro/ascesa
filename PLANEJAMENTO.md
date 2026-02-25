@@ -101,15 +101,15 @@ Plataforma digital para associação do Sicoob, contendo website, aplicativo mob
 
 #### Sprint 10: Login e Área Restrita
 - [x] Página de login
-- [ ] Redefinição de senha
+- [x] Redefinição de senha
 - [x] Dashboard do associado
 - [ ] Dados do plano/associação
 
 #### Sprint 11: Perfil do Associado
-- [ ] Visualização de dados cadastrais
-- [ ] Edição de dados pessoais
+- [x] Visualização de dados cadastrais
+- [x] Edição de dados pessoais
 - [ ] Upload de foto de perfil
-- [ ] Alteração de senha
+- [x] Alteração de senha
 
 #### Sprint 12: Recursos do Associado
 - [ ] Extrato de pagamentos
