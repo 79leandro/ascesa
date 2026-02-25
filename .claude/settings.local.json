@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init:*)",
+      "Bash(npm init:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npx @nestjs/cli@latest new:*)",
+      "Bash(docker --version:*)",
+      "Bash(npm install)",
+      "Bash(sudo apt update:*)",
+      "Bash(sudo apt upgrade:*)",
+      "Bash(sudo docker ps:*)",
+      "Bash(timeout 15 npm run start:dev)",
+      "Bash(npm install:*)",
+      "Bash(timeout 10 npm run:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(curl:*)",
+      "Bash(npm run start:dev)",
+      "Bash(npx prisma init:*)",
+      "Bash(npx prisma generate)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run dev)",
+      "Bash(npx prisma studio:*)",
+      "Bash(node -e:*)",
+      "Bash(npx prisma migrate deploy)",
+      "Bash(PGPASSWORD=ascesa2024 psql:*)",
+      "Bash(git remote add:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}

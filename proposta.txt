@@ -1,0 +1,285 @@
+VISÃO GERAL DO PROJETO E PÚBLICO-ALVO
+ Visão do Projeto: Queremos construir uma plataforma digital que seja
+moderna, atraente, intuitiva, escalável, segura e visualmente
+cativante. O site servirá como nosso principal portal de informações e
+serviços, com foco especial na apresentação dos benefícios/convênios e
+na gestão de associados, enquanto o aplicativo oferecerá uma
+experiência otimizada para usuários mobile, com funcionalidades
+específicas e acesso facilitado. Buscamos uma fácil navegação que
+permita aos visitantes e associados encontrar o que precisam
+rapidamente e sem esforço.
+
+
+ Público-Alvo: Nosso público principal é composto por funcionários e
+associados do Sicoob, com familiaridade com tecnologia e uso de
+smartphones.
+ Para o site, o público-alvo se estende a potenciais associados e
+aos associados já existentes, que buscarão informações sobre
+benefícios e acessarão suas áreas restritas.
+ Diferenciais Desejados: Buscamos uma solução que se destaque pela
+usabilidade excepcional, design inovador, performance rápida,
+segurança de dados e capacidade de integração futura com outras
+ferramentas. É fundamental que a plataforma ajude a fortalecer
+nossa comunidade e a otimizar a gestão de nossos membros.
+4. ESCOPO DO PROJETO (REQUISITOS PRELIMINARES)
+Esta seção descreve os módulos e funcionalidades que esperamos em nossa
+plataforma. Por favor, detalhe como sua equipe abordaria cada item e sugira
+melhorias ou funcionalidades adicionais que considere relevantes.
+4.1. Desenvolvimento do Site (Plataforma Web)
+ Design e Experiência do Usuário (UI/UX):
+o Design moderno, atraente, altamente intuitivo e responsivo
+(otimizado para desktop, tablet e mobile).
+o Interface de usuário (UI) limpa, profissional e visualmente
+impactante, alinhada à nossa identidade visual e que transmita
+confiança.
+o Jornada do usuário (UX) clara e fluida, com foco em uma
+navegação extremamente fácil para que os visitantes possam
+conhecer os benefícios/convênios oferecidos e para as interações
+principais (ex: cadastro, busca de informações, acesso à área do
+associado).
+o Criação de protótipos e wireframes detalhados para aprovação
+antes do desenvolvimento, garantindo a excelência da
+experiência.
+ Arquitetura e Tecnologia:
+o Plataforma robusta, escalável e segura.
+o Tecnologias modernas e de alto desempenho para garantir a
+velocidade e a estabilidade.
+o Painel administrativo (CMS) intuitivo e completo para
+gerenciamento de todo o conteúdo, usuários, associados,
+pagamentos, divulgações etc.
+ Módulos e Funcionalidades Essenciais:
+
+
+o Páginas Institucionais: Home, Sobre Nós, Contato, Blog, FAQ,
+Seja um parceiro e associa-se.
+o Seção de Benefícios/Convênios:
+ Página dedicada para listar e detalhar todos os benefícios
+e convênios oferecidos, com possibilidade de filtros e
+busca.
+ Cada convênio deve ter uma página própria com
+descrição, condições, parceiros e como o associado pode
+utilizá-lo.
+ Conteúdo dinâmico, atualizável via painel administrativo.
+ Recursos visuais (imagens, vídeos) para tornar a
+apresentação mais atraente.
+o Sistema de Cadastro e Login:
+ Processo de Inscrição Online: Permite que novas
+pessoas se inscrevam como associados, coletando dados
+cadastrais essenciais (nome completo, CPF/CNPJ, RG,
+endereço, telefone, e-mail, data de nascimento, profissão,
+etc.).
+ Ter um campo de cadastramento em lote, bloqueio em lote,
+exportar lista e relatórios.
+ Validação de campos e feedback claro ao usuário.
+ Integração com e-mail para confirmação de cadastro.
+ Área de login para associados e para a diretoria.
+o Área do Associado (Restrita):
+ Acesso personalizado a informações exclusivas, como
+detalhes do seu plano, extrato de pagamentos, benefícios
+ativados.
+ Possibilidade de atualização de dados cadastrais pelo
+próprio associado.
+ Canal de comunicação direta com a associação.
+ Votação da Assembleia: Possibilidade de visualizar os
+candidatos aos cargos de Diretor e a respectiva Chapa.
+
+o Funcionalidades especificas
+ Vitrine Virtual: Catálogo de produtos/serviços, para
+compra, venda e troca, publicadas sob responsabilidades
+dos associados
+
+
+ Módulo de Blog/Notícias: Para publicação regular de
+conteúdo relevante para associados e público em geral.
+ Formulários Personalizados: Contato, orçamento,
+pesquisa de satisfação.
+ Integração com Redes Sociais: Compartilhamento de
+conteúdo e login social.
+ Chat Online/Suporte: Integração com ferramentas de
+atendimento para dúvidas e suporte aos associados.
+Gestão fácil para o responsável.
+ Otimização SEO: Implementação de boas práticas para
+motores de busca para atrair novos visitantes.
+4.2. Desenvolvimento do Aplicativo Mobile (iOS e Android)
+ Design e Experiência do Usuário (UI/UX):
+o Design nativo e intuitivo para cada plataforma (iOS e Android),
+seguindo as diretrizes de cada sistema.
+o Interface e jornada do usuário alinhadas com o site, mas
+otimizadas para mobile, priorizando a agilidade e conveniência.
+o Foco em uma experiência fluida para acesso rápido a benefícios
+e informações de associado.
+ Arquitetura e Tecnologia:
+o Desenvolvimento nativo (Swift/Kotlin) ou híbrido (React
+Native/Flutter), com justificativa da escolha.
+o Garantia de performance e estabilidade mesmo com grande
+volume de usuários.
+o Proponente pode sugerir o que for melhor
+ Módulos e Funcionalidades Essenciais:
+o Cadastro e Login: Sincronizado com o site.
+o Acesso Rápido a Benefícios: Navegação simplificada pelos
+convênios, com a possibilidade de &quot;favoritar&quot; ou pesquisar.
+o Carteirinha Digital: Uma versão digital da carteirinha de
+associado para fácil apresentação.
+o Funcionalidades específicas:
+ Recursos Offline: Acesso a certas informações sem
+conexão.
+ Notificações Push: Para alertas, promoções de
+convênios, lembretes de pagamentos, notícias importantes.
+
+
+ Geolocalização: Para encontrar unidades parceiras,
+eventos próximos.
+ Leitura de QR Code/Código de Barras: Para validação
+de benefícios.
+ Integração com Câmera/Galeria: Para upload de fotos,
+documentos, etc..
+ Área do Associado Personalizada: Acesso rápido a
+informações relevantes do perfil e status.
+ Funcionalidades de E-commerce: Espelhadas ou
+adaptadas do site.
+ Lista de Desejos: Para convênios ou produtos.
+ Funcionalidades de Segurança: Autenticação biométrica
+(Touch ID/Face ID).
+ Votação da Assembleia: Possibilidade de visualizar os
+candidatos aos cargos de Diretor e a respectiva Chapa.
+ Publicação: Suporte na publicação e aprovação nas lojas de aplicativos
+(App Store e Google Play), incluindo a otimização da listagem (ASO).
+4.3. Módulo de Controle e Gestão de Associados (Administrativo)
+Este é um módulo crítico para a diretoria, acessível através do painel
+administrativo do site, que deve oferecer:
+ Gerenciamento de Inscrições:
+o Painel para a diretoria visualizar todas as novas solicitações de
+associação.
+o Funcionalidade de Aprovação ou Recusa da Diretoria: Com
+campos para justificativa (interna) em caso de recusa.
+o Notificação automática por e-mail ao solicitante sobre o status de
+sua inscrição.
+
+ Cadastro Completo de Associados:
+o Visualização e edição dos dados cadastrais de todos os
+associados (ativos e inativos).
+o Histórico de ações (data de associação, aprovação, histórico de
+pagamentos, etc.).
+o Possibilidade de adicionar notas internas sobre o associado.
+ Controle de Status e Pagamentos:
+
+
+o Indicadores visuais claros para identificar quais associados
+estão ativos, inativos, com pagamentos regulares ou em
+atraso.
+o Lembretes automáticos para pagamentos pendentes (via e-
+mail/push).
+o Relatório de inadimplência.
+ Cadastramento de Assembleias:
+o Candidatos a Diretoria e chapa.
+ Extração de Relatórios:
+o Relatórios detalhados e personalizáveis sobre a base de
+associados:
+ Demográficos (idade, localização, profissão).
+ Comportamentais (quais benefícios são mais
+acessados/utilizados).
+ Status de pagamento e histórico financeiro.
+ Taxas de adesão e desligamento.
+ Estes relatórios são cruciais para direcionamento de
+marketing e para a tomada de decisões estratégicas.
+o Possibilidade de exportar dados em formatos comuns (CSV,
+Excel).
+
+ Gestão de Benefícios e Convênios:
+o Ferramenta para cadastrar, editar e desativar
+convênios/benefícios.
+o Controle de acesso a certos benefícios com base no tipo de
+associação ou status de pagamento.
+
+4.4. Estratégias Adicionais para Atrair e Controlar Novas Associações
+Além do escopo principal, gostaríamos de explorar as seguintes
+funcionalidades ou abordagens para otimizar a atração e gestão de
+associados:
+ Programa de Indicação:
+o Funcionalidade para associados indicarem novos membros, com
+possíveis recompensas ou incentivos para o indicador e/ou o
+novo associado.
+o Painel de controle para a diretoria gerenciar as indicações e suas
+recompensas.
+
+
+ Conteúdo Exclusivo para Associados:
+o Criação de uma área no site e/ou app com acesso a artigos,
+webinars, cursos ou outros materiais de valor exclusivo para
+associados. Isso agrega valor à associação e pode ser um forte
+atrativo.
+
+ Fórum ou Comunidade Online:
+o Um espaço para associados interagirem entre si, trocarem
+experiências, tirarem dúvidas e fortalecerem o senso de
+comunidade.
+o Moderação pela diretoria.
+ Eventos Exclusivos:
+o Módulo de eventos no site/app, onde os associados podem se
+inscrever para workshops, palestras ou encontros exclusivos.
+o Notificações sobre novos eventos.
+ Página de Depoimentos/Histórias de Sucesso:
+o Seção no site para exibir depoimentos de associados satisfeitos,
+mostrando o valor da associação e atraindo novos membros.
+
+ Onboarding Automatizado:
+o Sequência de e-mails de boas-vindas e guias para novos
+associados, explicando como tirar o máximo proveito dos
+benefícios e da plataforma.
+ Módulo de Feedbacks e Pesquisas:
+o Ferramenta para criar e aplicar pesquisas de satisfação e
+feedback entre os associados, ajudando a entender suas
+necessidades e melhorar os serviços.
+
+ Gamificação (Opcional):
+o Elementos de gamificação para engajar os associados, como
+pontos por participação, emblemas ou rankings, incentivando a
+interação e a utilização da plataforma.
+4.5. Integrações e Backend (Servidor/Banco de Dados)
+ API Integrada: Uma API robusta que conecte o site e o aplicativo,
+garantindo a sincronização de dados em tempo real entre todos os
+módulos (benefícios, associados, pagamentos).
+ Banco de Dados: Escolha e justifique o banco de dados mais adequado
+para a escalabilidade, segurança e volume de dados de associados e
+transações.
+
+
+ Servidor/Hospedagem: Sugestão de ambiente de hospedagem e
+infraestrutura para garantir alta disponibilidade, desempenho e
+segurança dos dados dos associados.
+ Integrações Essenciais:
+o Gateway de Pagamento: Para processamento seguro de
+mensalidades e outras transações.
+o Ferramenta de E-mail Marketing: Para comunicação com
+associados e prospecção.
+o Ferramentas de Análise de Dados (Google Analytics,
+Mixpanel, etc.): Para monitorar o tráfego, comportamento do
+usuário e efetividade das estratégias.
+o Controle LGPD: Observar posicionamento do associado em
+relação a LGPD.
+
+ Integrações Opcionais (a serem discutidas): CRM (Customer
+Relationship Management) para gestão aprofundada de relacionamento
+com associados, ERP (Enterprise Resource Planning) para gestão
+interna mais ampla.
+5. REQUISITOS GERAIS E NÃO FUNCIONAIS
+ Segurança: Implementação de todas as melhores práticas de
+segurança (criptografia de ponta a ponta, proteção contra-ataques,
+backups regulares, compliance com LGPD/GDPR) para proteger os
+dados sensíveis dos associados.
+ Performance: Tempos de carregamento rápidos para site e aplicativo,
+garantindo uma experiência de usuário fluida mesmo com muitos
+acessos.
+ Escalabilidade: A plataforma deve ser projetada para suportar o
+crescimento futuro em termos de número de associados, volume de
+dados e adição de novas funcionalidades.
+ Manutenibilidade: Código limpo, bem documentado e de fácil
+manutenção, permitindo futuras atualizações e evoluções sem grandes
+dificuldades.
+ Documentação: Entrega de documentação técnica completa do projeto
+(arquitetura, API, manual do usuário para a diretoria, código fonte, etc.).
+ Idiomas: [Português - Brasil], com possibilidade de expansão para
+outros idiomas no futuro.
+ Acessibilidade: Boas práticas de acessibilidade web (WCAG) para
+garantir que o site possa ser utilizado por pessoas com diferentes
+capacidades.

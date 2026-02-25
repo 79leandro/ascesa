@@ -1,0 +1,181 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Usuários do sistema
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String
+  cpf           String?   @unique
+  phone         String?
+  avatar        String?
+  status        UserStatus @default(PENDING)
+  role          Role      @default(ASSOCIATED)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLogin     DateTime?
+
+  // Relacionamentos
+  associated         Associated?
+  admin              Admin?
+  favorites          Favorite[]
+  passwordReset      PasswordReset?
+  documents          Document[]
+  membershipHistory  MembershipHistory[]
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum Role {
+  ADMIN
+  DIRECTOR
+  ASSOCIATED
+}
+
+// Dados específicos do associado
+model Associated {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cpf             String
+  rg              String?
+  birthDate       DateTime?
+  profession      String?
+  address         String?
+  city            String?
+  state           String?
+  zipCode         String?
+  membershipDate  DateTime  @default(now())
+  membershipType  MembershipType @default(STANDARD)
+  status          AssociatedStatus @default(ACTIVE)
+  paymentStatus   PaymentStatus @default(PAID)
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+enum MembershipType {
+  STANDARD
+  PREMIUM
+  FAMILY
+}
+
+enum AssociatedStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  OVERDUE
+}
+
+// Dados específicos do administrador
+model Admin {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department      String?
+  position        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Convênios/Benefícios
+model Benefit {
+  id              String    @id @default(uuid())
+  name            String
+  slug            String    @unique
+  description     String?
+  terms           String?
+  category        String
+  partnerName     String?
+  partnerLogo     String?
+  discount        String?
+  image           String?
+  isActive        Boolean   @default(true)
+  isFeatured      Boolean   @default(false)
+  order           Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  favorites       Favorite[]
+}
+
+// Favoritos de benefícios
+model Favorite {
+  id              String    @id @default(uuid())
+  userId          String
+  benefitId       String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  benefit         Benefit   @relation(fields: [benefitId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+
+  @@unique([userId, benefitId])
+}
+
+// Documentos do associado
+model Document {
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        DocumentType
+  filename    String
+  path        String
+  status      DocumentStatus @default(PENDING)
+  verifiedAt  DateTime?
+  createdAt   DateTime      @default(now())
+}
+
+enum DocumentType {
+  CPF
+  RG
+  COMPROVANTE_RESIDENCIA
+  FOTO
+  OUTRO
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Histórico de status do associado
+model MembershipHistory {
+  id          String      @id @default(uuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      AssociatedStatus
+  notes       String?
+  createdAt   DateTime    @default(now())
+  createdBy   String?     // ID do admin que fez a ação
+}
