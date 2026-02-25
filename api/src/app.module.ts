@@ -8,6 +8,8 @@ import { UploadsModule } from './uploads/uploads.module';
 import { MailModule } from './mail/mail.module';
 import { DocumentsModule } from './documents/documents.module';
 import { UsersModule } from './users/users.module';
+import { BenefitsModule } from './benefits/benefits.module';
+import { PartnersModule } from './partners/partners.module';
 import { SeedService } from './seed.service';
 
 @Module({
@@ -18,6 +20,8 @@ import { SeedService } from './seed.service';
     MailModule,
     DocumentsModule,
     UsersModule,
+    BenefitsModule,
+    PartnersModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService, SeedService],

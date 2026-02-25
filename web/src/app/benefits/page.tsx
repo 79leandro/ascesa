@@ -1,72 +1,64 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { API_ENDPOINTS } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const benefits = [
-  {
-    id: 1,
-    category: 'Saúde',
-    name: 'Desconto em Farmácias',
-    partner: 'Drogaria Popular',
-    description: 'Até 30% de desconto em medicamentos e produtos de beleza',
-    discount: '30%',
-  },
-  {
-    id: 2,
-    category: 'Saúde',
-    name: 'Plano de Saúde',
-    partner: 'Sicoob Saúde',
-    description: 'Planos odontológicos e de saúde com condições especiais',
-    discount: '20%',
-  },
-  {
-    id: 3,
-    category: 'Educação',
-    name: 'Desconto em Faculdades',
-    partner: 'Unec',
-    description: 'Bolsa de estudos e descontos em cursos de graduação e pós',
-    discount: '25%',
-  },
-  {
-    id: 4,
-    category: 'Educação',
-    name: 'Cursos Online',
-    partner: ' várias',
-    description: 'Descontos em plataformas de cursos online',
-    discount: '15%',
-  },
-  {
-    id: 5,
-    category: 'Serviços',
-    name: 'Assistência Funeral',
-    partner: 'Serv funerários',
-    description: 'Cobertura completa para associados e familiares',
-    discount: '40%',
-  },
-  {
-    id: 6,
-    category: 'Lazer',
-    name: 'Descontos em Hotéis',
-    partner: 'Rede de Hotéis',
-    description: 'Pacotes de hospedagem com preços especiais',
-    discount: '20%',
-  },
-];
+interface Benefit {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string;
+  partnerName: string | null;
+  partnerLogo: string | null;
+  discount: string | null;
+  image: string | null;
+  isActive: boolean;
+  isFeatured: boolean;
+  order: number;
+}
 
-const categories = ['Todas', 'Saúde', 'Educação', 'Serviços', 'Lazer'];
+const categories = ['Todas', 'Saúde', 'Educação', 'Serviços', 'Lazer', 'Outros'];
 
 export default function BenefitsPage() {
+  const [benefits, setBenefits] = useState<Benefit[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Todas');
 
+  useEffect(() => {
+    fetchBenefits();
+  }, []);
+
+  const fetchBenefits = async () => {
+    try {
+      // Fetch only active benefits for the public page
+      const res = await fetch(`${API_ENDPOINTS.benefits.list}?active=true`);
+      const data = await res.json();
+      if (data.success) {
+        setBenefits(data.benefits);
+      }
+    } catch (error) {
+      console.error('Error fetching benefits:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredBenefits = benefits.filter((benefit) => {
-    const matchesSearch = benefit.name.toLowerCase().includes(search.toLowerCase()) ||
-      benefit.partner.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch =
+      benefit.name.toLowerCase().includes(search.toLowerCase()) ||
+      (benefit.partnerName && benefit.partnerName.toLowerCase().includes(search.toLowerCase())) ||
+      (benefit.description && benefit.description.toLowerCase().includes(search.toLowerCase()));
     const matchesCategory = category === 'Todas' || benefit.category === category;
     return matchesSearch && matchesCategory;
   });
+
+  // Get featured benefits to show first
+  const featuredBenefits = filteredBenefits.filter(b => b.isFeatured);
+  const regularBenefits = filteredBenefits.filter(b => !b.isFeatured);
+  const displayBenefits = [...featuredBenefits, ...regularBenefits];
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -102,41 +94,56 @@ export default function BenefitsPage() {
         </div>
       </div>
 
-      {/* Lista de Benefícios */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredBenefits.map((benefit) => (
-          <Card key={benefit.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <span className="text-xs font-medium text-[var(--secondary)] uppercase">
-                    {benefit.category}
-                  </span>
-                  <CardTitle className="mt-1">{benefit.name}</CardTitle>
-                </div>
-                <span className="bg-[var(--secondary)] text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {benefit.discount}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-[var(--muted-foreground)] mb-2">
-                <strong>Parceiro:</strong> {benefit.partner}
-              </p>
-              <p className="text-sm text-[var(--muted-foreground)]">
-                {benefit.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredBenefits.length === 0 && (
+      {/* Loading */}
+      {loading ? (
         <div className="text-center py-12">
-          <p className="text-[var(--muted-foreground)]">
-            Nenhum benefício encontrado com os filtros selecionados.
-          </p>
+          <p className="text-[var(--muted-foreground)]">Carregando benefícios...</p>
         </div>
+      ) : (
+        <>
+          {/* Lista de Benefícios */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {displayBenefits.map((benefit) => (
+              <Card key={benefit.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs font-medium text-[var(--secondary)] uppercase">
+                        {benefit.category}
+                      </span>
+                      <CardTitle className="mt-1">{benefit.name}</CardTitle>
+                    </div>
+                    {benefit.discount && (
+                      <span className="bg-[var(--secondary)] text-white text-xs font-bold px-3 py-1 rounded-full">
+                        {benefit.discount}
+                      </span>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {benefit.partnerName && (
+                    <p className="text-sm text-[var(--muted-foreground)] mb-2">
+                      <strong>Parceiro:</strong> {benefit.partnerName}
+                    </p>
+                  )}
+                  {benefit.description && (
+                    <p className="text-sm text-[var(--muted-foreground)]">
+                      {benefit.description}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {filteredBenefits.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-[var(--muted-foreground)]">
+                Nenhum benefício encontrado com os filtros selecionados.
+              </p>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

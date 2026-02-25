@@ -18,7 +18,22 @@ export const API_ENDPOINTS = {
   },
   benefits: {
     list: `${API_URL}/benefits`,
+    get: (id: string) => `${API_URL}/benefits/${id}`,
+    create: `${API_URL}/benefits`,
+    update: (id: string) => `${API_URL}/benefits/${id}`,
+    delete: (id: string) => `${API_URL}/benefits/${id}`,
+    toggleStatus: (id: string) => `${API_URL}/benefits/${id}/toggle-status`,
+    toggleFeatured: (id: string) => `${API_URL}/benefits/${id}/featured`,
     favorite: (benefitId: string) => `${API_URL}/benefits/${benefitId}/favorite`,
+  },
+  partners: {
+    list: `${API_URL}/partners`,
+    get: (id: string) => `${API_URL}/partners/${id}`,
+    create: `${API_URL}/partners`,
+    update: (id: string) => `${API_URL}/partners/${id}`,
+    delete: (id: string) => `${API_URL}/partners/${id}`,
+    toggleStatus: (id: string) => `${API_URL}/partners/${id}/toggle-status`,
+    updateStatus: (id: string) => `${API_URL}/partners/${id}/status`,
   },
 } as const;
 

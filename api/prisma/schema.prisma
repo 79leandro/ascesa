@@ -127,7 +127,34 @@ model Benefit {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
+  // Relacionamentos
+  partnerId       String?
+  partner         Partner?  @relation(fields: [partnerId], references: [id], onDelete: SetNull)
   favorites       Favorite[]
+}
+
+// Parceiros
+model Partner {
+  id              String    @id @default(uuid())
+  name            String
+  corporateName   String?
+  cnpj            String?
+  email           String?
+  phone           String?
+  category        String
+  discount        String?
+  description     String?
+  logo            String?
+  website         String?
+  status          String    @default("ACTIVE") // ACTIVE, INACTIVE, PENDING
+  contractStart   DateTime?
+  contractEnd     DateTime?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relacionamentos
+  benefits        Benefit[]
 }
 
 // Favoritos de benefícios
