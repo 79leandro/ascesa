@@ -112,10 +112,10 @@ Plataforma digital para associação do Sicoob, contendo website, aplicativo mob
 - [x] Alteração de senha
 
 #### Sprint 12: Recursos do Associado
-- [ ] Extrato de pagamentos
-- [ ] Carteirinha digital
-- [ ] Benefícios ativados
-- [ ] Canal de comunicação
+- [x] Extrato de pagamentos
+- [x] Carteirinha digital
+- [x] Benefícios ativados
+- [x] Canal de comunicação
 
 ---
 
