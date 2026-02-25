@@ -151,8 +151,8 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    // Verificar status
-    if (user.status === 'PENDING') {
+    // Verificar status (admin pode login mesmo pendente)
+    if (user.status === 'PENDING' && user.role !== 'ADMIN') {
       throw new UnauthorizedException('Conta pendente de aprovação');
     }
 
