@@ -10,7 +10,12 @@
     "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "npm run dev -w web",
     "dev:api": "npm run start:dev -w api",
-    "build": "npm run build -w web && npm run build -w api",
+    "build": "npm run build -w api",
+    "build:web": "npm run build -w web",
+    "build:api": "npm run build -w api",
+    "start": "npm run start -w api",
+    "start:web": "npm run start -w web",
+    "start:api": "npm run start -w api",
     "lint": "npm run lint -w web && npm run lint -w api",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down"
