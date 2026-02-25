@@ -482,8 +482,8 @@ export default function AdminPartnersPage() {
                   </Button>
                 </div>
                 <Button
-                  variant="destructive"
-                  className="w-full mt-2"
+                  variant="outline"
+                  className="w-full mt-2 bg-red-50 text-red-600 border-red-200 hover:bg-red-100 hover:border-red-300"
                   onClick={() => handleDelete(selectedPartner.id)}
                 >
                   Excluir Parceiro
