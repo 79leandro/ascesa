@@ -26,6 +26,8 @@ export const APP_ROUTES = {
   home: '/',
   login: '/login',
   register: '/register',
+  forgotPassword: '/forgot-password',
+  resetPassword: '/reset-password',
   dashboard: '/dashboard',
   profile: '/dashboard/profile',
   documents: '/dashboard/documents',
