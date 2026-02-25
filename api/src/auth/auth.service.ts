@@ -31,6 +31,15 @@ interface UserResponse {
   status?: string;
 }
 
+/**
+ * Interface mínima do usuário para token
+ */
+interface TokenUser {
+  id: string;
+  email: string;
+  role: string;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -174,8 +183,8 @@ export class AuthService {
   /**
    * Gera token JWT para o usuário
    */
-  private generateToken(user: JwtPayload): string {
-    const payload = {
+  private generateToken(user: TokenUser): string {
+    const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       role: user.role,

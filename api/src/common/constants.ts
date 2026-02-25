@@ -11,9 +11,9 @@ export const AUTH_CONSTANTS = {
 // Configurações de upload
 export const UPLOAD_CONSTANTS = {
   MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB
-  ALLOWED_MIME_TYPES: ['image/jpeg', 'image/png', 'application/pdf'],
-  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.pdf'],
-} as const;
+  ALLOWED_MIME_TYPES: ['image/jpeg', 'image/png', 'application/pdf'] as string[],
+  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.pdf'] as string[],
+};
 
 // Configurações de paginação
 export const PAGINATION = {
