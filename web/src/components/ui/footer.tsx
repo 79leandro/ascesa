@@ -69,8 +69,8 @@ export function Footer() {
             <h4 className="font-semibold mb-4 text-[var(--foreground)]">Contato</h4>
             <ul className="space-y-2 text-sm text-[var(--muted-foreground)]">
               <li>contato@ascesa.com.br</li>
-              <li>(31) 3200-0000</li>
-              <li>Belo Horizonte, MG</li>
+              <li>(61) 3200-0000</li>
+              <li>Brasília, DF</li>
             </ul>
           </div>
         </div>

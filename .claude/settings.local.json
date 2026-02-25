@@ -39,7 +39,8 @@
       "Bash(npm run build)",
       "Bash(npx nest build)",
       "WebFetch(domain:ascesa.onrender.com)",
-      "WebFetch(domain:ascesa.vercel.app)"
+      "WebFetch(domain:ascesa.vercel.app)",
+      "WebFetch(domain:www.ascesa.com.br)"
     ]
   }
 }

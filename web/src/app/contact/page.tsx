@@ -36,13 +36,13 @@ export default function ContactPage() {
             <div>
               <h3 className="font-medium text-[var(--foreground)] mb-2">Endereço</h3>
               <p className="text-[var(--muted-foreground)]">
-                Av. João Pessoa, 1350 - Belo Horizonte, MG
+                SCN Quadra 5, Bloco A - Asa Norte, Brasília, DF
               </p>
             </div>
             <div>
               <h3 className="font-medium text-[var(--foreground)] mb-2">Telefone</h3>
               <p className="text-[var(--muted-foreground)]">
-                (31) 3200-0000
+                (61) 3200-0000
               </p>
             </div>
             <div>

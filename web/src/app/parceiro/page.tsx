@@ -105,7 +105,7 @@ export default function ParceiroPage() {
               />
               <Input
                 label="Telefone"
-                placeholder="(31) 99999-9999"
+                placeholder="(61) 99999-9999"
                 value={formData.telefone}
                 onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                 required

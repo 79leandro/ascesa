@@ -107,7 +107,7 @@ export default function ContactPage() {
             <CardContent className="pt-6 text-center">
               <div className="text-3xl mb-2">📞</div>
               <p className="font-medium">Telefone</p>
-              <p className="text-sm text-[var(--muted-foreground)]">(31) 3200-0000</p>
+              <p className="text-sm text-[var(--muted-foreground)]">(61) 3200-0000</p>
             </CardContent>
           </Card>
           <Card>
