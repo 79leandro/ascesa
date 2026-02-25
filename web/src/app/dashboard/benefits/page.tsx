@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { APP_ROUTES } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -150,7 +151,7 @@ export default function MyBenefitsPage() {
                 <p className="text-sm text-[var(--muted-foreground)] mb-4">
                   {benefit.description}
                 </p>
-                <Button className="w-full" variant={benefit.isActive ? 'default' : 'outline'}>
+                <Button className="w-full" variant={benefit.isActive ? 'primary' : 'outline'}>
                   {benefit.isActive ? 'Utilizar' : 'Indisponível'}
                 </Button>
               </CardContent>

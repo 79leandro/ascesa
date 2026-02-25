@@ -4,6 +4,23 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
+const SIDEBAR_LINKS = [
+  { href: '/admin', label: 'Dashboard', icon: '📊' },
+  { href: '/admin/benefits', label: 'Convênios', icon: '🎁' },
+  { href: '/admin/blog', label: 'Blog', icon: '📰' },
+  { href: '/admin/associates', label: 'Associados', icon: '👥' },
+  { href: '/admin/documents', label: 'Documentos', icon: '📄' },
+  { href: '/admin/payments', label: 'Pagamentos', icon: '💳' },
+  { href: '/admin/assemblies', label: 'Assembleias', icon: '🏛️' },
+  { href: '/admin/reports', label: 'Relatórios', icon: '📈' },
+  { href: '/admin/partners', label: 'Parceiros', icon: '🤝' },
+  { href: '/admin/events', label: 'Eventos', icon: '📅' },
+  { href: '/admin/forum', label: 'Fórum', icon: '💬' },
+  { href: '/admin/showcase', label: 'Vitrine', icon: '🛒' },
+  { href: '/admin/settings', label: 'Configurações', icon: '⚙️' },
+  { href: '/dashboard', label: 'Voltar ao Site', icon: '←' },
+];
+
 export default function AdminPage() {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -32,24 +49,17 @@ export default function AdminPage() {
       <aside className="w-64 bg-[var(--primary)] text-white p-6">
         <h2 className="text-xl font-bold mb-8">Painel Admin</h2>
         <nav className="space-y-2">
-          <Link href="/admin" className="block py-2 px-4 rounded hover:bg-white/10">
-            📊 Dashboard
-          </Link>
-          <Link href="/admin/benefits" className="block py-2 px-4 rounded hover:bg-white/10">
-            🎁 Convênios
-          </Link>
-          <Link href="/admin/blog" className="block py-2 px-4 rounded hover:bg-white/10">
-            📰 Blog
-          </Link>
-          <Link href="/admin/associates" className="block py-2 px-4 rounded hover:bg-white/10">
-            👥 Associados
-          </Link>
-          <Link href="/admin" className="block py-2 px-4 rounded hover:bg-white/10">
-            ⚙️ Configurações
-          </Link>
-          <Link href="/dashboard" className="block py-2 px-4 rounded hover:bg-white/10 mt-8">
-            ← Voltar ao Site
-          </Link>
+          {SIDEBAR_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`block py-2 px-4 rounded hover:bg-white/10 ${
+                link.href === '/admin' ? 'bg-white/20' : ''
+              }`}
+            >
+              {link.icon} {link.label}
+            </Link>
+          ))}
         </nav>
       </aside>
 

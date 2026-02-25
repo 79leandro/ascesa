@@ -34,7 +34,10 @@
       "Bash(git push:*)",
       "Bash(npx prisma db push:*)",
       "WebSearch",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npm run build)",
+      "Bash(npx nest build)"
     ]
   }
 }
