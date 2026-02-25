@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth, useRequireAuth } from '@/hooks/useAuth';
-import { User } from '@/lib/types';
+import { useAuth } from '@/hooks/useAuth';
 import { APP_ROUTES } from '@/lib/api';
 
 export default function DashboardPage() {
@@ -55,7 +54,7 @@ export default function DashboardPage() {
           </div>
         </Link>
 
-        <Link href={APP_ROUTES.documents} className="block">
+        <Link href="/dashboard/documents" className="block">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-[var(--border)] hover:shadow-md transition-shadow">
             <div className="text-3xl mb-3">📄</div>
             <h3 className="text-lg font-semibold text-[var(--foreground)]">Documentos</h3>
@@ -63,11 +62,35 @@ export default function DashboardPage() {
           </div>
         </Link>
 
-        <Link href={APP_ROUTES.benefits} className="block">
+        <Link href="/dashboard/benefits" className="block">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-[var(--border)] hover:shadow-md transition-shadow">
             <div className="text-3xl mb-3">🎁</div>
             <h3 className="text-lg font-semibold text-[var(--foreground)]">Meus Benefícios</h3>
-            <p className="text-sm text-[var(--muted-foreground)]">Veja os convênios disponíveis</p>
+            <p className="text-sm text-[var(--muted-foreground)]">Convênios ativados</p>
+          </div>
+        </Link>
+
+        <Link href="/dashboard/card" className="block">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-[var(--border)] hover:shadow-md transition-shadow">
+            <div className="text-3xl mb-3">💳</div>
+            <h3 className="text-lg font-semibold text-[var(--foreground)]">Carteirinha</h3>
+            <p className="text-sm text-[var(--muted-foreground)]">Carteirinha digital</p>
+          </div>
+        </Link>
+
+        <Link href="/dashboard/payments" className="block">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-[var(--border)] hover:shadow-md transition-shadow">
+            <div className="text-3xl mb-3">💰</div>
+            <h3 className="text-lg font-semibold text-[var(--foreground)]">Pagamentos</h3>
+            <p className="text-sm text-[var(--muted-foreground)]">Extrato de pagamentos</p>
+          </div>
+        </Link>
+
+        <Link href="/dashboard/contact" className="block">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-[var(--border)] hover:shadow-md transition-shadow">
+            <div className="text-3xl mb-3">💬</div>
+            <h3 className="text-lg font-semibold text-[var(--foreground)]">Fale Conosco</h3>
+            <p className="text-sm text-[var(--muted-foreground)]">Entre em contato</p>
           </div>
         </Link>
 
