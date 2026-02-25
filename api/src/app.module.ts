@@ -8,6 +8,7 @@ import { UploadsModule } from './uploads/uploads.module';
 import { MailModule } from './mail/mail.module';
 import { DocumentsModule } from './documents/documents.module';
 import { UsersModule } from './users/users.module';
+import { SeedService } from './seed.service';
 
 @Module({
   imports: [
@@ -19,6 +20,6 @@ import { UsersModule } from './users/users.module';
     UsersModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService],
+  providers: [AppService, PrismaService, SeedService],
 })
 export class AppModule {}
