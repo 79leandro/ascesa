@@ -234,11 +234,11 @@ export default function AdminPartnersPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'ACTIVE':
+      case 'ATIVO':
         return 'bg-green-100 text-green-800';
-      case 'PENDING':
+      case 'PENDENTE':
         return 'bg-yellow-100 text-yellow-800';
-      case 'INACTIVE':
+      case 'INATIVO':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -247,11 +247,11 @@ export default function AdminPartnersPage() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'ACTIVE':
+      case 'ATIVO':
         return 'Ativo';
-      case 'PENDING':
+      case 'PENDENTE':
         return 'Pendente';
-      case 'INACTIVE':
+      case 'INATIVO':
         return 'Inativo';
       default:
         return status;
@@ -267,9 +267,9 @@ export default function AdminPartnersPage() {
     return matchesFilter && matchesSearch;
   });
 
-  const activeCount = partners.filter((p) => p.status === 'ACTIVE').length;
-  const pendingCount = partners.filter((p) => p.status === 'PENDING').length;
-  const inactiveCount = partners.filter((p) => p.status === 'INACTIVE').length;
+  const activeCount = partners.filter((p) => p.status === 'ATIVO').length;
+  const pendingCount = partners.filter((p) => p.status === 'PENDENTE').length;
+  const inactiveCount = partners.filter((p) => p.status === 'INATIVO').length;
 
   return (
     <div className="flex min-h-screen">
