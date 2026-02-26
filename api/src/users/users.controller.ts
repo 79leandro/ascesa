@@ -13,28 +13,28 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Buscar usuário por ID' })
   async findOne(@Param('id') id: string) {
-    const user = await this.prisma.user.findUnique({
+    const usuario = await this.prisma.usuario.findUnique({
       where: { id },
       include: {
-        associated: true,
+        associado: true,
       },
     });
 
-    if (!user) {
+    if (!usuario) {
       return { success: false, message: 'Usuário não encontrado' };
     }
 
     return {
       success: true,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        phone: user.phone,
-        cpf: user.cpf,
-        status: user.status,
-        role: user.role,
-        associated: user.associated,
+      usuario: {
+        id: usuario.id,
+        email: usuario.email,
+        nome: usuario.nome,
+        telefone: usuario.telefone,
+        cpf: usuario.cpf,
+        status: usuario.status,
+        papel: usuario.papel,
+        associado: usuario.associado,
       },
     };
   }
@@ -45,34 +45,34 @@ export class UsersController {
   @ApiOperation({ summary: 'Atualizar dados do usuário' })
   async update(@Param('id') id: string, @Body() updateData: any) {
     try {
-      const user = await this.prisma.user.update({
+      const usuario = await this.prisma.usuario.update({
         where: { id },
         data: {
-          name: updateData.name,
-          phone: updateData.phone,
+          nome: updateData.nome,
+          telefone: updateData.telefone,
         },
       });
 
       // Update associated data if exists
-      if (updateData.profession || updateData.address || updateData.city || updateData.state) {
-        await this.prisma.associated.updateMany({
-          where: { userId: id },
+      if (updateData.profissao || updateData.endereco || updateData.cidade || updateData.estado) {
+        await this.prisma.associado.updateMany({
+          where: { usuarioId: id },
           data: {
-            profession: updateData.profession,
-            address: updateData.address,
-            city: updateData.city,
-            state: updateData.state,
+            profissao: updateData.profissao,
+            endereco: updateData.endereco,
+            cidade: updateData.cidade,
+            estado: updateData.estado,
           },
         });
       }
 
       return {
         success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          phone: user.phone,
+        usuario: {
+          id: usuario.id,
+          email: usuario.email,
+          nome: usuario.nome,
+          telefone: usuario.telefone,
         },
       };
     } catch (error) {

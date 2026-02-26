@@ -26,8 +26,8 @@ interface JwtPayload {
 interface UserResponse {
   id: string;
   email: string;
-  name: string;
-  role: string;
+  nome: string;
+  papel: string;
   status?: string;
 }
 
@@ -37,7 +37,7 @@ interface UserResponse {
 interface TokenUser {
   id: string;
   email: string;
-  role: string;
+  papel: string;
 }
 
 @Injectable()
@@ -58,7 +58,7 @@ export class AuthService {
     const { email, password, name, phone, cpf, birthDate, profession, address, city, state } = registerDto;
 
     // Verificar se usuário já existe
-    const existingUser = await this.prisma.user.findUnique({
+    const existingUser = await this.prisma.usuario.findUnique({
       where: { email },
     });
 
@@ -68,7 +68,7 @@ export class AuthService {
 
     // Verificar se CPF já está em uso
     if (cpf) {
-      const existingCpf = await this.prisma.user.findFirst({
+      const existingCpf = await this.prisma.usuario.findFirst({
         where: { cpf },
       });
       if (existingCpf) {
@@ -80,35 +80,35 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, AUTH_CONSTANTS.BCRYPT_ROUNDS);
 
     // Criar usuário e associado em transação
-    const user = await this.prisma.user.create({
+    const usuario = await this.prisma.usuario.create({
       data: {
         email,
-        password: hashedPassword,
-        name,
-        phone,
+        senha: hashedPassword,
+        nome: name,
+        telefone: phone,
         cpf,
-        status: 'PENDING',
-        role: 'ASSOCIATED',
-        associated: {
+        status: 'PENDENTE',
+        papel: 'ASSOCIADO',
+        associado: {
           create: {
             cpf,
-            birthDate: birthDate ? new Date(birthDate) : undefined,
-            profession,
-            address,
-            city,
-            state,
-            membershipType: 'STANDARD',
-            status: 'PENDING',
+            dataNascimento: birthDate ? new Date(birthDate) : undefined,
+            profissao: profession,
+            endereco: address,
+            cidade: city,
+            estado: state,
+            tipoMembership: 'PADRAO',
+            status: 'PENDENTE',
           },
         },
       },
       include: {
-        associated: true,
+        associado: true,
       },
     });
 
     // Gerar token de acesso
-    const token = this.generateToken(user);
+    const token = this.generateToken(usuario);
 
     // Enviar email de confirmação (não bloqueia o registro se falhar)
     try {
@@ -118,12 +118,12 @@ export class AuthService {
     }
 
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        status: user.status,
+      usuario: {
+        id: usuario.id,
+        email: usuario.email,
+        nome: usuario.nome,
+        papel: usuario.papel,
+        status: usuario.status,
       },
       accessToken: token,
     };
@@ -136,45 +136,45 @@ export class AuthService {
     const { email, password } = loginDto;
 
     // Buscar usuário
-    const user = await this.prisma.user.findUnique({
+    const usuario = await this.prisma.usuario.findUnique({
       where: { email },
     });
 
-    if (!user) {
+    if (!usuario) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
     // Verificar senha
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = await bcrypt.compare(password, usuario.senha);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
     // Verificar status (admin pode login mesmo pendente)
-    if (user.status === 'PENDING' && user.role !== 'ADMIN') {
+    if (usuario.status === 'PENDENTE' && usuario.papel !== 'ADMIN') {
       throw new UnauthorizedException('Conta pendente de aprovação');
     }
 
-    if (user.status === 'SUSPENDED') {
+    if (usuario.status === 'SUSPENSO') {
       throw new UnauthorizedException('Conta suspensa');
     }
 
     // Atualizar último login
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() },
+    await this.prisma.usuario.update({
+      where: { id: usuario.id },
+      data: { ultimoLogin: new Date() },
     });
 
     // Gerar token de acesso
-    const token = this.generateToken(user);
+    const token = this.generateToken(usuario);
 
     return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
+      usuario: {
+        id: usuario.id,
+        email: usuario.email,
+        nome: usuario.nome,
+        papel: usuario.papel,
       },
       accessToken: token,
     };
@@ -183,11 +183,11 @@ export class AuthService {
   /**
    * Gera token JWT para o usuário
    */
-  private generateToken(user: TokenUser): string {
+  private generateToken(usuario: TokenUser): string {
     const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
+      sub: usuario.id,
+      email: usuario.email,
+      role: usuario.papel,
     };
 
     return this.jwtService.sign(payload);
@@ -197,19 +197,19 @@ export class AuthService {
    * Valida usuário pelo ID
    */
   async validateUser(userId: string) {
-    const user = await this.prisma.user.findUnique({
+    const usuario = await this.prisma.usuario.findUnique({
       where: { id: userId },
       include: {
-        associated: true,
-        admin: true,
+        associado: true,
+        administrador: true,
       },
     });
 
-    if (!user) {
+    if (!usuario) {
       throw new UnauthorizedException();
     }
 
-    return user;
+    return usuario;
   }
 
   /**
@@ -218,12 +218,12 @@ export class AuthService {
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
     const { email } = forgotPasswordDto;
 
-    const user = await this.prisma.user.findUnique({
+    const usuario = await this.prisma.usuario.findUnique({
       where: { email },
     });
 
     // Não revelar se o usuário existe ou não
-    if (!user) {
+    if (!usuario) {
       return { message: 'Se o email existir, você receberá um link de recuperação' };
     }
 
@@ -233,23 +233,23 @@ export class AuthService {
     expiresAt.setHours(expiresAt.getHours() + AUTH_CONSTANTS.PASSWORD_RESET_EXPIRY_HOURS);
 
     // Salvar token no banco
-    await this.prisma.passwordReset.upsert({
-      where: { userId: user.id },
+    await this.prisma.redefinicaoSenha.upsert({
+      where: { usuarioId: usuario.id },
       update: {
         token: resetToken,
-        expiresAt,
-        used: false,
+        expiraEm: expiresAt,
+        usado: false,
       },
       create: {
-        userId: user.id,
+        usuarioId: usuario.id,
         token: resetToken,
-        expiresAt,
+        expiraEm: expiresAt,
       },
     });
 
     // Enviar email de recuperação
     try {
-      await this.mailService.sendPasswordResetEmail(user.email, resetToken);
+      await this.mailService.sendPasswordResetEmail(usuario.email, resetToken);
     } catch (error) {
       this.logger.error('Erro ao enviar email de recuperação', error);
     }
@@ -264,20 +264,20 @@ export class AuthService {
     const { token, newPassword } = resetPasswordDto;
 
     // Buscar token válido
-    const passwordReset = await this.prisma.passwordReset.findFirst({
+    const redefinicaoSenha = await this.prisma.redefinicaoSenha.findFirst({
       where: {
         token,
-        used: false,
-        expiresAt: {
+        usado: false,
+        expiraEm: {
           gt: new Date(),
         },
       },
       include: {
-        user: true,
+        usuario: true,
       },
     });
 
-    if (!passwordReset) {
+    if (!redefinicaoSenha) {
       throw new BadRequestException('Token inválido ou expirado');
     }
 
@@ -285,15 +285,15 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(newPassword, AUTH_CONSTANTS.BCRYPT_ROUNDS);
 
     // Atualizar senha
-    await this.prisma.user.update({
-      where: { id: passwordReset.userId },
-      data: { password: hashedPassword },
+    await this.prisma.usuario.update({
+      where: { id: redefinicaoSenha.usuarioId },
+      data: { senha: hashedPassword },
     });
 
     // Marcar token como usado
-    await this.prisma.passwordReset.update({
-      where: { id: passwordReset.id },
-      data: { used: true },
+    await this.prisma.redefinicaoSenha.update({
+      where: { id: redefinicaoSenha.id },
+      data: { usado: true },
     });
 
     return { message: 'Senha atualizada com sucesso' };

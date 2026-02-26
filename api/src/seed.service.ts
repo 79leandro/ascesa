@@ -18,21 +18,21 @@ export class SeedService implements OnModuleInit {
       const hashedPassword = await bcrypt.hash('admin123', 10);
 
       // Upsert admin user - creates or updates
-      await this.prisma.user.upsert({
+      await this.prisma.usuario.upsert({
         where: { email: adminEmail },
         update: {
-          password: hashedPassword,
-          role: 'ADMIN',
-          status: 'ACTIVE',
+          senha: hashedPassword,
+          papel: 'ADMIN',
+          status: 'ATIVO',
         },
         create: {
-          name: 'Administrador',
+          nome: 'Administrador',
           email: adminEmail,
-          password: hashedPassword,
+          senha: hashedPassword,
           cpf: '00000000000',
-          phone: '00000000000',
-          role: 'ADMIN',
-          status: 'ACTIVE',
+          telefone: '00000000000',
+          papel: 'ADMIN',
+          status: 'ATIVO',
         },
       });
 

@@ -6,11 +6,11 @@ export class AppService {
   constructor(private prisma: PrismaService) {}
 
   async getHello() {
-    const userCount = await this.prisma.user.count();
+    const userCount = await this.prisma.usuario.count();
     return {
-      message: 'Hello World!',
+      message: 'ASCESA API - Sistema de Gestão de Associados',
       dbConnected: true,
-      users: userCount,
+      usuarios: userCount,
     };
   }
 }

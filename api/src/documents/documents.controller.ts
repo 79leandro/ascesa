@@ -58,23 +58,23 @@ export class DocumentsController {
     @Body('type') type: string,
     @Body('userId') userId: string,
   ) {
-    const document = await this.prisma.document.create({
+    const documento = await this.prisma.documento.create({
       data: {
-        userId,
-        type: type as any,
-        filename: file.originalname,
-        path: file.path,
-        status: DOCUMENT_STATUS.PENDING,
+        usuarioId: userId,
+        tipo: type as any,
+        nomeArquivo: file.originalname,
+        caminho: file.path,
+        status: 'PENDENTE',
       },
     });
 
     return {
       success: true,
-      document: {
-        id: document.id,
-        type: document.type,
-        filename: document.filename,
-        status: document.status,
+      documento: {
+        id: documento.id,
+        tipo: documento.tipo,
+        nomeArquivo: documento.nomeArquivo,
+        status: documento.status,
       },
     };
   }
@@ -87,11 +87,11 @@ export class DocumentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar documentos do usuário' })
   async getUserDocuments(@Param('userId') userId: string) {
-    const documents = await this.prisma.document.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
+    const documentos = await this.prisma.documento.findMany({
+      where: { usuarioId: userId },
+      orderBy: { criadoEm: 'desc' },
     });
 
-    return { success: true, documents };
+    return { success: true, documentos };
   }
 }
