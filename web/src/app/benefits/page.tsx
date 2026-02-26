@@ -7,16 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Benefit {
   id: string;
-  name: string;
-  description: string | null;
-  category: string;
-  partnerName: string | null;
-  partnerLogo: string | null;
-  discount: string | null;
-  image: string | null;
-  isActive: boolean;
-  isFeatured: boolean;
-  order: number;
+  nome: string;
+  descricao: string | null;
+  categoria: string;
+  nomeParceiro: string | null;
+  logoParceiro: string | null;
+  desconto: string | null;
+  imagem: string | null;
+  ativo: boolean;
+  destacado: boolean;
+  ordem: number;
 }
 
 const categories = ['Todas', 'Saúde', 'Educação', 'Serviços', 'Lazer', 'Outros'];
@@ -34,10 +34,10 @@ export default function BenefitsPage() {
   const fetchBenefits = async () => {
     try {
       // Fetch only active benefits for the public page
-      const res = await fetch(`${API_ENDPOINTS.benefits.list}?active=true`);
+      const res = await fetch(`${API_ENDPOINTS.beneficios.list}?ativo=true`);
       const data = await res.json();
       if (data.success) {
-        setBenefits(data.benefits);
+        setBenefits(data.beneficios);
       }
     } catch (error) {
       console.error('Error fetching benefits:', error);
@@ -48,16 +48,16 @@ export default function BenefitsPage() {
 
   const filteredBenefits = benefits.filter((benefit) => {
     const matchesSearch =
-      benefit.name.toLowerCase().includes(search.toLowerCase()) ||
-      (benefit.partnerName && benefit.partnerName.toLowerCase().includes(search.toLowerCase())) ||
-      (benefit.description && benefit.description.toLowerCase().includes(search.toLowerCase()));
-    const matchesCategory = category === 'Todas' || benefit.category === category;
+      benefit.nome.toLowerCase().includes(search.toLowerCase()) ||
+      (benefit.nomeParceiro && benefit.nomeParceiro.toLowerCase().includes(search.toLowerCase())) ||
+      (benefit.descricao && benefit.descricao.toLowerCase().includes(search.toLowerCase()));
+    const matchesCategory = category === 'Todas' || benefit.categoria === category;
     return matchesSearch && matchesCategory;
   });
 
   // Get featured benefits to show first
-  const featuredBenefits = filteredBenefits.filter(b => b.isFeatured);
-  const regularBenefits = filteredBenefits.filter(b => !b.isFeatured);
+  const featuredBenefits = filteredBenefits.filter(b => b.destacado);
+  const regularBenefits = filteredBenefits.filter(b => !b.destacado);
   const displayBenefits = [...featuredBenefits, ...regularBenefits];
 
   return (
@@ -109,26 +109,26 @@ export default function BenefitsPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <span className="text-xs font-medium text-[var(--secondary)] uppercase">
-                        {benefit.category}
+                        {benefit.categoria}
                       </span>
-                      <CardTitle className="mt-1">{benefit.name}</CardTitle>
+                      <CardTitle className="mt-1">{benefit.nome}</CardTitle>
                     </div>
-                    {benefit.discount && (
+                    {benefit.desconto && (
                       <span className="bg-[var(--secondary)] text-white text-xs font-bold px-3 py-1 rounded-full">
-                        {benefit.discount}
+                        {benefit.desconto}
                       </span>
                     )}
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {benefit.partnerName && (
+                  {benefit.nomeParceiro && (
                     <p className="text-sm text-[var(--muted-foreground)] mb-2">
-                      <strong>Parceiro:</strong> {benefit.partnerName}
+                      <strong>Parceiro:</strong> {benefit.nomeParceiro}
                     </p>
                   )}
-                  {benefit.description && (
+                  {benefit.descricao && (
                     <p className="text-sm text-[var(--muted-foreground)]">
-                      {benefit.description}
+                      {benefit.descricao}
                     </p>
                   )}
                 </CardContent>

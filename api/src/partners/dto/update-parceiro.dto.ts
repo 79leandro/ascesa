@@ -1,11 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreatePartnerDto {
-  @ApiProperty()
-  name: string;
+export class UpdateParceiroDto {
+  @ApiProperty({ required: false })
+  nome?: string;
 
   @ApiProperty({ required: false })
-  corporateName?: string;
+  razaoSocial?: string;
 
   @ApiProperty({ required: false })
   cnpj?: string;
@@ -14,32 +14,32 @@ export class CreatePartnerDto {
   email?: string;
 
   @ApiProperty({ required: false })
-  phone?: string;
-
-  @ApiProperty()
-  category: string;
+  telefone?: string;
 
   @ApiProperty({ required: false })
-  discount?: string;
+  categoria?: string;
 
   @ApiProperty({ required: false })
-  description?: string;
+  desconto?: string;
+
+  @ApiProperty({ required: false })
+  descricao?: string;
 
   @ApiProperty({ required: false })
   logo?: string;
 
   @ApiProperty({ required: false })
-  website?: string;
+  site?: string;
 
   @ApiProperty({ required: false })
   status?: string;
 
   @ApiProperty({ required: false })
-  contractStart?: Date;
+  inicioContrato?: Date;
 
   @ApiProperty({ required: false })
-  contractEnd?: Date;
+  fimContrato?: Date;
 
   @ApiProperty({ required: false })
-  isActive?: boolean;
+  ativo?: boolean;
 }

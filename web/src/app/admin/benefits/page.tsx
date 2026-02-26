@@ -24,16 +24,16 @@ const SIDEBAR_LINKS = [
 
 interface Benefit {
   id: string;
-  name: string;
-  description: string;
-  category: string;
-  partnerName: string | null;
-  partnerLogo: string | null;
-  discount: string | null;
-  image: string | null;
-  isActive: boolean;
-  isFeatured: boolean;
-  order: number;
+  nome: string;
+  descricao: string;
+  categoria: string;
+  nomeParceiro: string | null;
+  logoParceiro: string | null;
+  desconto: string | null;
+  imagem: string | null;
+  ativo: boolean;
+  destacado: boolean;
+  ordem: number;
 }
 
 const CATEGORIES = ['Saúde', 'Educação', 'Lazer', 'Serviços', 'Outros'];
@@ -50,14 +50,14 @@ export default function AdminBenefitsPage() {
 
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category: 'Saúde',
-    partnerName: '',
-    discount: '',
-    isActive: true,
-    isFeatured: false,
-    order: 0,
+    nome: '',
+    descricao: '',
+    categoria: 'Saúde',
+    nomeParceiro: '',
+    desconto: '',
+    ativo: true,
+    destacado: false,
+    ordem: 0,
   });
 
   useEffect(() => {
@@ -76,14 +76,14 @@ export default function AdminBenefitsPage() {
   const fetchBenefits = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_ENDPOINTS.benefits.list, {
+      const res = await fetch(API_ENDPOINTS.beneficios.list, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       const data = await res.json();
       if (data.success) {
-        setBenefits(data.benefits);
+        setBenefits(data.beneficios);
       }
     } catch (error) {
       console.error('Error fetching benefits:', error);
@@ -99,8 +99,8 @@ export default function AdminBenefitsPage() {
     try {
       const token = localStorage.getItem('token');
       const url = editingBenefit
-        ? API_ENDPOINTS.benefits.update(editingBenefit.id)
-        : API_ENDPOINTS.benefits.create;
+        ? API_ENDPOINTS.beneficios.update(editingBenefit.id)
+        : API_ENDPOINTS.beneficios.create;
 
       const res = await fetch(url, {
         method: editingBenefit ? 'PATCH' : 'POST',
@@ -130,7 +130,7 @@ export default function AdminBenefitsPage() {
   const handleToggleStatus = async (benefit: Benefit) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_ENDPOINTS.benefits.toggleStatus(benefit.id), {
+      const res = await fetch(API_ENDPOINTS.beneficios.toggleStatus(benefit.id), {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -150,7 +150,7 @@ export default function AdminBenefitsPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_ENDPOINTS.benefits.delete(id), {
+      const res = await fetch(API_ENDPOINTS.beneficios.delete(id), {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -168,14 +168,14 @@ export default function AdminBenefitsPage() {
   const openEditModal = (benefit: Benefit) => {
     setEditingBenefit(benefit);
     setFormData({
-      name: benefit.name,
-      description: benefit.description || '',
-      category: benefit.category,
-      partnerName: benefit.partnerName || '',
-      discount: benefit.discount || '',
-      isActive: benefit.isActive,
-      isFeatured: benefit.isFeatured,
-      order: benefit.order,
+      nome: benefit.nome,
+      descricao: benefit.descricao || '',
+      categoria: benefit.categoria,
+      nomeParceiro: benefit.nomeParceiro || '',
+      desconto: benefit.desconto || '',
+      ativo: benefit.ativo,
+      destacado: benefit.destacado,
+      ordem: benefit.ordem,
     });
     setShowModal(true);
   };
@@ -183,14 +183,14 @@ export default function AdminBenefitsPage() {
   const resetForm = () => {
     setEditingBenefit(null);
     setFormData({
-      name: '',
-      description: '',
-      category: 'Saúde',
-      partnerName: '',
-      discount: '',
-      isActive: true,
-      isFeatured: false,
-      order: 0,
+      nome: '',
+      descricao: '',
+      categoria: 'Saúde',
+      nomeParceiro: '',
+      desconto: '',
+      ativo: true,
+      destacado: false,
+      ordem: 0,
     });
   };
 
@@ -201,9 +201,9 @@ export default function AdminBenefitsPage() {
 
   const filteredBenefits = benefits.filter((benefit) => {
     const matchesSearch =
-      benefit.name.toLowerCase().includes(search.toLowerCase()) ||
-      (benefit.partnerName && benefit.partnerName.toLowerCase().includes(search.toLowerCase()));
-    const matchesCategory = categoryFilter === 'all' || benefit.category === categoryFilter;
+      benefit.nome.toLowerCase().includes(search.toLowerCase()) ||
+      (benefit.nomeParceiro && benefit.nomeParceiro.toLowerCase().includes(search.toLowerCase()));
+    const matchesCategory = categoryFilter === 'all' || benefit.categoria === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
@@ -274,22 +274,22 @@ export default function AdminBenefitsPage() {
               <tbody>
                 {filteredBenefits.map((benefit) => (
                   <tr key={benefit.id} className="border-t border-[var(--border)]">
-                    <td className="px-6 py-4 text-[var(--foreground)]">{benefit.name}</td>
-                    <td className="px-6 py-4 text-[var(--muted-foreground)]">{benefit.partnerName || '-'}</td>
+                    <td className="px-6 py-4 text-[var(--foreground)]">{benefit.nome}</td>
+                    <td className="px-6 py-4 text-[var(--muted-foreground)]">{benefit.nomeParceiro || '-'}</td>
                     <td className="px-6 py-4">
-                      <span className="px-2 py-1 bg-[var(--gray-100)] rounded text-sm">{benefit.category}</span>
+                      <span className="px-2 py-1 bg-[var(--gray-100)] rounded text-sm">{benefit.categoria}</span>
                     </td>
-                    <td className="px-6 py-4 text-[var(--foreground)]">{benefit.discount || '-'}</td>
+                    <td className="px-6 py-4 text-[var(--foreground)]">{benefit.desconto || '-'}</td>
                     <td className="px-6 py-4">
                       <button
                         onClick={() => handleToggleStatus(benefit)}
                         className={`px-2 py-1 rounded text-sm cursor-pointer ${
-                          benefit.isActive
+                          benefit.ativo
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {benefit.isActive ? 'Ativo' : 'Inativo'}
+                        {benefit.ativo ? 'Ativo' : 'Inativo'}
                       </button>
                     </td>
                     <td className="px-6 py-4">
@@ -332,8 +332,8 @@ export default function AdminBenefitsPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Nome *</label>
                       <Input
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        value={formData.nome}
+                        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                         required
                         placeholder="Nome do convênio"
                       />
@@ -341,8 +341,8 @@ export default function AdminBenefitsPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Categoria *</label>
                       <select
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        value={formData.categoria}
+                        onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
                         className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
                         required
                       >
@@ -356,8 +356,8 @@ export default function AdminBenefitsPage() {
                   <div>
                     <label className="block text-sm font-medium mb-2">Descrição</label>
                     <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      value={formData.descricao}
+                      onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                       className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
                       rows={3}
                       placeholder="Descrição do convênio"
@@ -368,16 +368,16 @@ export default function AdminBenefitsPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Parceiro</label>
                       <Input
-                        value={formData.partnerName}
-                        onChange={(e) => setFormData({ ...formData, partnerName: e.target.value })}
+                        value={formData.nomeParceiro}
+                        onChange={(e) => setFormData({ ...formData, nomeParceiro: e.target.value })}
                         placeholder="Nome do parceiro"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">Desconto</label>
                       <Input
-                        value={formData.discount}
-                        onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                        value={formData.desconto}
+                        onChange={(e) => setFormData({ ...formData, desconto: e.target.value })}
                         placeholder="Ex: 20%"
                       />
                     </div>
@@ -388,16 +388,16 @@ export default function AdminBenefitsPage() {
                       <label className="block text-sm font-medium mb-2">Ordem</label>
                       <Input
                         type="number"
-                        value={formData.order}
-                        onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+                        value={formData.ordem}
+                        onChange={(e) => setFormData({ ...formData, ordem: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                     <div className="flex items-center gap-2 pt-6">
                       <input
                         type="checkbox"
                         id="isActive"
-                        checked={formData.isActive}
-                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                        checked={formData.ativo}
+                        onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
                       />
                       <label htmlFor="isActive" className="text-sm">Ativo</label>
                     </div>
@@ -405,8 +405,8 @@ export default function AdminBenefitsPage() {
                       <input
                         type="checkbox"
                         id="isFeatured"
-                        checked={formData.isFeatured}
-                        onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                        checked={formData.destacado}
+                        onChange={(e) => setFormData({ ...formData, destacado: e.target.checked })}
                       />
                       <label htmlFor="isFeatured" className="text-sm">Destacado</label>
                     </div>

@@ -12,60 +12,60 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
-import { CreatePartnerDto } from './dto/create-partner.dto';
-import { UpdatePartnerDto } from './dto/update-partner.dto';
+import { CreateParceiroDto } from './dto/create-parceiro.dto';
+import { UpdateParceiroDto } from './dto/update-parceiro.dto';
 
-@ApiTags('Partners')
-@Controller('partners')
-export class PartnersController {
+@ApiTags('Parceiros')
+@Controller('parceiros')
+export class ParceirosController {
   constructor(private prisma: PrismaService) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os parceiros' })
-  async findAll(@Query('category') category?: string, @Query('status') status?: string) {
+  async findAll(@Query('categoria') categoria?: string, @Query('status') status?: string) {
     const where: any = {};
 
-    if (category && category !== 'all') {
-      where.category = category;
+    if (categoria && categoria !== 'all') {
+      where.categoria = categoria;
     }
 
     if (status && status !== 'ALL') {
       where.status = status;
     }
 
-    const partners = await this.prisma.partner.findMany({
+    const parceiros = await this.prisma.parceiro.findMany({
       where,
       include: {
-        benefits: true,
+        beneficios: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        criadoEm: 'desc',
       },
     });
 
     return {
       success: true,
-      partners,
+      parceiros,
     };
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Buscar parceiro por ID' })
   async findOne(@Param('id') id: string) {
-    const partner = await this.prisma.partner.findUnique({
+    const parceiro = await this.prisma.parceiro.findUnique({
       where: { id },
       include: {
-        benefits: true,
+        beneficios: true,
       },
     });
 
-    if (!partner) {
+    if (!parceiro) {
       return { success: false, message: 'Parceiro não encontrado' };
     }
 
     return {
       success: true,
-      partner,
+      parceiro,
     };
   }
 
@@ -73,30 +73,30 @@ export class PartnersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar novo parceiro' })
-  async create(@Body() createPartnerDto: CreatePartnerDto) {
+  async create(@Body() createParceiroDto: CreateParceiroDto) {
     try {
-      const partner = await this.prisma.partner.create({
+      const parceiro = await this.prisma.parceiro.create({
         data: {
-          name: createPartnerDto.name,
-          corporateName: createPartnerDto.corporateName,
-          cnpj: createPartnerDto.cnpj,
-          email: createPartnerDto.email,
-          phone: createPartnerDto.phone,
-          category: createPartnerDto.category,
-          discount: createPartnerDto.discount,
-          description: createPartnerDto.description,
-          logo: createPartnerDto.logo,
-          website: createPartnerDto.website,
-          status: createPartnerDto.status ?? 'ACTIVE',
-          contractStart: createPartnerDto.contractStart,
-          contractEnd: createPartnerDto.contractEnd,
-          isActive: createPartnerDto.isActive ?? true,
+          nome: createParceiroDto.nome,
+          razaoSocial: createParceiroDto.razaoSocial,
+          cnpj: createParceiroDto.cnpj,
+          email: createParceiroDto.email,
+          telefone: createParceiroDto.telefone,
+          categoria: createParceiroDto.categoria,
+          desconto: createParceiroDto.desconto,
+          descricao: createParceiroDto.descricao,
+          logo: createParceiroDto.logo,
+          site: createParceiroDto.site,
+          status: createParceiroDto.status ?? 'ATIVO',
+          inicioContrato: createParceiroDto.inicioContrato,
+          fimContrato: createParceiroDto.fimContrato,
+          ativo: createParceiroDto.ativo ?? true,
         },
       });
 
       return {
         success: true,
-        partner,
+        parceiro,
       };
     } catch (error) {
       return { success: false, message: 'Erro ao criar parceiro' };
@@ -107,31 +107,31 @@ export class PartnersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar parceiro' })
-  async update(@Param('id') id: string, @Body() updatePartnerDto: UpdatePartnerDto) {
+  async update(@Param('id') id: string, @Body() updateParceiroDto: UpdateParceiroDto) {
     try {
-      const partner = await this.prisma.partner.update({
+      const parceiro = await this.prisma.parceiro.update({
         where: { id },
         data: {
-          name: updatePartnerDto.name,
-          corporateName: updatePartnerDto.corporateName,
-          cnpj: updatePartnerDto.cnpj,
-          email: updatePartnerDto.email,
-          phone: updatePartnerDto.phone,
-          category: updatePartnerDto.category,
-          discount: updatePartnerDto.discount,
-          description: updatePartnerDto.description,
-          logo: updatePartnerDto.logo,
-          website: updatePartnerDto.website,
-          status: updatePartnerDto.status,
-          contractStart: updatePartnerDto.contractStart,
-          contractEnd: updatePartnerDto.contractEnd,
-          isActive: updatePartnerDto.isActive,
+          nome: updateParceiroDto.nome,
+          razaoSocial: updateParceiroDto.razaoSocial,
+          cnpj: updateParceiroDto.cnpj,
+          email: updateParceiroDto.email,
+          telefone: updateParceiroDto.telefone,
+          categoria: updateParceiroDto.categoria,
+          desconto: updateParceiroDto.desconto,
+          descricao: updateParceiroDto.descricao,
+          logo: updateParceiroDto.logo,
+          site: updateParceiroDto.site,
+          status: updateParceiroDto.status,
+          inicioContrato: updateParceiroDto.inicioContrato,
+          fimContrato: updateParceiroDto.fimContrato,
+          ativo: updateParceiroDto.ativo,
         },
       });
 
       return {
         success: true,
-        partner,
+        parceiro,
       };
     } catch (error) {
       return { success: false, message: 'Erro ao atualizar parceiro' };
@@ -144,7 +144,7 @@ export class PartnersController {
   @ApiOperation({ summary: 'Excluir parceiro' })
   async remove(@Param('id') id: string) {
     try {
-      await this.prisma.partner.delete({
+      await this.prisma.parceiro.delete({
         where: { id },
       });
 
@@ -163,25 +163,25 @@ export class PartnersController {
   @ApiOperation({ summary: 'Alternar status do parceiro' })
   async toggleStatus(@Param('id') id: string) {
     try {
-      const partner = await this.prisma.partner.findUnique({
+      const parceiro = await this.prisma.parceiro.findUnique({
         where: { id },
       });
 
-      if (!partner) {
+      if (!parceiro) {
         return { success: false, message: 'Parceiro não encontrado' };
       }
 
-      const updated = await this.prisma.partner.update({
+      const atualizado = await this.prisma.parceiro.update({
         where: { id },
         data: {
-          isActive: !partner.isActive,
-          status: partner.isActive ? 'INACTIVE' : 'ACTIVE',
+          ativo: !parceiro.ativo,
+          status: parceiro.ativo ? 'INATIVO' : 'ATIVO',
         },
       });
 
       return {
         success: true,
-        partner: updated,
+        parceiro: atualizado,
       };
     } catch (error) {
       return { success: false, message: 'Erro ao alterar status' };
@@ -191,29 +191,29 @@ export class PartnersController {
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Atualizar status do parceiro (ACTIVE, INACTIVE, PENDING)' })
+  @ApiOperation({ summary: 'Atualizar status do parceiro (ATIVO, INATIVO, PENDENTE)' })
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {
     try {
-      const partner = await this.prisma.partner.findUnique({
+      const parceiro = await this.prisma.parceiro.findUnique({
         where: { id },
       });
 
-      if (!partner) {
+      if (!parceiro) {
         return { success: false, message: 'Parceiro não encontrado' };
       }
 
-      const isActive = status === 'ACTIVE';
-      const updated = await this.prisma.partner.update({
+      const ativo = status === 'ATIVO';
+      const atualizado = await this.prisma.parceiro.update({
         where: { id },
         data: {
           status,
-          isActive,
+          ativo,
         },
       });
 
       return {
         success: true,
-        partner: updated,
+        parceiro: atualizado,
       };
     } catch (error) {
       return { success: false, message: 'Erro ao alterar status' };

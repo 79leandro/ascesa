@@ -1,45 +1,39 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UpdatePartnerDto {
+export class UpdateBeneficioDto {
   @ApiProperty({ required: false })
-  name?: string;
+  nome?: string;
 
   @ApiProperty({ required: false })
-  corporateName?: string;
+  descricao?: string;
 
   @ApiProperty({ required: false })
-  cnpj?: string;
+  termos?: string;
 
   @ApiProperty({ required: false })
-  email?: string;
+  categoria?: string;
 
   @ApiProperty({ required: false })
-  phone?: string;
+  nomeParceiro?: string;
 
   @ApiProperty({ required: false })
-  category?: string;
+  logoParceiro?: string;
 
   @ApiProperty({ required: false })
-  discount?: string;
+  desconto?: string;
 
   @ApiProperty({ required: false })
-  description?: string;
+  imagem?: string;
 
   @ApiProperty({ required: false })
-  logo?: string;
+  ativo?: boolean;
 
   @ApiProperty({ required: false })
-  website?: string;
+  destacado?: boolean;
 
   @ApiProperty({ required: false })
-  status?: string;
+  ordem?: number;
 
   @ApiProperty({ required: false })
-  contractStart?: Date;
-
-  @ApiProperty({ required: false })
-  contractEnd?: Date;
-
-  @ApiProperty({ required: false })
-  isActive?: boolean;
+  parceiroId?: string;
 }

@@ -1,5 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// Schema do banco de dados - ASCESA
+// Usando nomes em Português Brasileiro
 
 generator client {
   provider = "prisma-client-js"
@@ -11,198 +11,215 @@ datasource db {
 }
 
 // Usuários do sistema
-model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  password      String
-  name          String
-  cpf           String?   @unique
-  phone         String?
+model Usuario {
+  id            String      @id @default(uuid())
+  email         String      @unique
+  senha         String      @map("password")
+  nome          String      @map("name")
+  cpf           String?     @unique
+  telefone       String?     @map("phone")
   avatar        String?
-  status        UserStatus @default(PENDING)
-  role          Role      @default(ASSOCIATED)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  lastLogin     DateTime?
+  status        StatusUsuario @default(PENDENTE)
+  papel         Papel        @default(ASSOCIADO)
+  criadoEm      DateTime    @default(now()) @map("createdAt")
+  atualizadoEm  DateTime    @updatedAt @map("updatedAt")
+  ultimoLogin   DateTime?   @map("lastLogin")
 
   // Relacionamentos
-  associated         Associated?
-  admin              Admin?
-  favorites          Favorite[]
-  passwordReset      PasswordReset?
-  documents          Document[]
-  membershipHistory  MembershipHistory[]
+  associado      Associado?
+  administrador  Administrador?
+  favoritos      Favorito[]
+  redefinicaoSenha RedefinicaoSenha?
+  documentos     Documento[]
+  historicosMembership HistoricoMembership[]
+
+  @@map("User")
 }
 
-model PasswordReset {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
+enum StatusUsuario {
+  PENDENTE @map("PENDING")
+  ATIVO    @map("ACTIVE")
+  INATIVO  @map("INACTIVE")
+  SUSPENSO @map("SUSPENDED")
 }
 
-enum UserStatus {
-  PENDING
-  ACTIVE
-  INACTIVE
-  SUSPENDED
+enum Papel {
+  ADMIN    @map("ADMIN")
+  DIRETOR  @map("DIRECTOR")
+  ASSOCIADO @map("ASSOCIATED")
 }
 
-enum Role {
-  ADMIN
-  DIRECTOR
-  ASSOCIATED
+model RedefinicaoSenha {
+  id          String   @id @default(uuid())
+  usuarioId   String   @unique @map("userId")
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  token       String
+  expiraEm    DateTime @map("expiresAt")
+  usado       Boolean  @default(false) @map("used")
+  criadoEm    DateTime @default(now()) @map("createdAt")
+
+  @@map("PasswordReset")
 }
 
 // Dados específicos do associado
-model Associated {
+model Associado {
   id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usuarioId       String    @unique @map("userId")
+  usuario         Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   cpf             String
   rg              String?
-  birthDate       DateTime?
-  profession      String?
-  address         String?
-  city            String?
-  state           String?
-  zipCode         String?
-  membershipDate  DateTime  @default(now())
-  membershipType  MembershipType @default(STANDARD)
-  status          AssociatedStatus @default(ACTIVE)
-  paymentStatus   PaymentStatus @default(PAID)
-  notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  dataNascimento  DateTime? @map("birthDate")
+  profissao       String?   @map("profession")
+  endereco        String?   @map("address")
+  cidade          String?   @map("city")
+  estado          String?   @map("state")
+  cep             String?   @map("zipCode")
+  dataAssociacao  DateTime  @default(now()) @map("membershipDate")
+  tipoMembership   TipoMembership @default(PADRAO) @map("membershipType")
+  status          StatusAssociado @default(ATIVO)
+  statusPagamento StatusPagamento @default(PAGO) @map("paymentStatus")
+  observacoes     String?   @map("notes")
+  criadoEm        DateTime  @default(now()) @map("createdAt")
+  atualizadoEm    DateTime  @updatedAt @map("updatedAt")
+
+  @@map("Associated")
 }
 
-enum MembershipType {
-  STANDARD
-  PREMIUM
-  FAMILY
+enum TipoMembership {
+  PADRAO  @map("STANDARD")
+  PREMIUM @map("PREMIUM")
+  FAMILIA @map("FAMILY")
 }
 
-enum AssociatedStatus {
-  ACTIVE
-  INACTIVE
-  PENDING
-  CANCELLED
+enum StatusAssociado {
+  ATIVO   @map("ACTIVE")
+  INATIVO @map("INACTIVE")
+  PENDENTE @map("PENDING")
+  CANCELADO @map("CANCELLED")
 }
 
-enum PaymentStatus {
-  PAID
-  PENDING
-  OVERDUE
+enum StatusPagamento {
+  PAGO     @map("PAID")
+  PENDENTE @map("PENDING")
+  ATRASADO @map("OVERDUE")
 }
 
 // Dados específicos do administrador
-model Admin {
+model Administrador {
   id              String    @id @default(uuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  department      String?
-  position        String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  usuarioId       String    @unique @map("userId")
+  usuario         Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  departamento    String?   @map("department")
+  cargo           String?   @map("position")
+  criadoEm        DateTime  @default(now()) @map("createdAt")
+  atualizadoEm    DateTime  @updatedAt @map("updatedAt")
+
+  @@map("Admin")
 }
 
 // Convênios/Benefícios
-model Benefit {
+model Beneficio {
   id              String    @id @default(uuid())
-  name            String
+  nome            String    @map("name")
   slug            String    @unique
-  description     String?
-  terms           String?
-  category        String
-  partnerName     String?
-  partnerLogo     String?
-  discount        String?
-  image           String?
-  isActive        Boolean   @default(true)
-  isFeatured      Boolean   @default(false)
-  order           Int       @default(0)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  descricao       String?   @map("description")
+  termos          String?   @map("terms")
+  categoria       String    @map("category")
+  nomeParceiro    String?   @map("partnerName")
+  logoParceiro    String?   @map("partnerLogo")
+  desconto        String?   @map("discount")
+  imagem          String?   @map("image")
+  ativo           Boolean   @default(true) @map("isActive")
+  destacado       Boolean   @default(false) @map("isFeatured")
+  ordem           Int       @default(0) @map("order")
+  criadoEm        DateTime  @default(now()) @map("createdAt")
+  atualizadoEm    DateTime  @updatedAt @map("updatedAt")
 
   // Relacionamentos
-  partnerId       String?
-  partner         Partner?  @relation(fields: [partnerId], references: [id], onDelete: SetNull)
-  favorites       Favorite[]
+  parceiroId      String?   @map("partnerId")
+  parceiro        Parceiro? @relation(fields: [parceiroId], references: [id], onDelete: SetNull)
+  favoritos       Favorito[]
+
+  @@map("Benefit")
 }
 
 // Parceiros
-model Partner {
+model Parceiro {
   id              String    @id @default(uuid())
-  name            String
-  corporateName   String?
+  nome            String    @map("name")
+  razaoSocial     String?   @map("corporateName")
   cnpj            String?
   email           String?
-  phone           String?
-  category        String
-  discount        String?
-  description     String?
+  telefone        String?   @map("phone")
+  categoria       String    @map("category")
+  desconto        String?   @map("discount")
+  descricao       String?   @map("description")
   logo            String?
-  website         String?
-  status          String    @default("ACTIVE") // ACTIVE, INACTIVE, PENDING
-  contractStart   DateTime?
-  contractEnd     DateTime?
-  isActive        Boolean   @default(true)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  site            String?   @map("website")
+  status          String    @default("ATIVO") @map("status") // ATIVO, INATIVO, PENDENTE
+  inicioContrato  DateTime? @map("contractStart")
+  fimContrato     DateTime? @map("contractEnd")
+  ativo           Boolean   @default(true) @map("isActive")
+  criadoEm        DateTime  @default(now()) @map("createdAt")
+  atualizadoEm    DateTime  @updatedAt @map("updatedAt")
 
   // Relacionamentos
-  benefits        Benefit[]
+  beneficios      Beneficio[]
+
+  @@map("Partner")
 }
 
 // Favoritos de benefícios
-model Favorite {
-  id              String    @id @default(uuid())
-  userId          String
-  benefitId       String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  benefit         Benefit   @relation(fields: [benefitId], references: [id], onDelete: Cascade)
-  createdAt       DateTime  @default(now())
+model Favorito {
+  id          String    @id @default(uuid())
+  usuarioId   String    @map("userId")
+  beneficioId String    @map("benefitId")
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  beneficio   Beneficio @relation(fields: [beneficioId], references: [id], onDelete: Cascade)
+  criadoEm    DateTime  @default(now()) @map("createdAt")
 
-  @@unique([userId, benefitId])
+  @@unique([usuarioId, beneficioId])
+  @@map("Favorite")
 }
 
 // Documentos do associado
-model Document {
+model Documento {
   id          String        @id @default(uuid())
-  userId      String
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type        DocumentType
-  filename    String
-  path        String
-  status      DocumentStatus @default(PENDING)
-  verifiedAt  DateTime?
-  createdAt   DateTime      @default(now())
+  usuarioId   String        @map("userId")
+  usuario     Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipo        TipoDocumento @map("type")
+  nomeArquivo String        @map("filename")
+  caminho     String        @map("path")
+  status      StatusDocumento @default(PENDENTE) @map("status")
+  verificadoEm DateTime?    @map("verifiedAt")
+  criadoEm    DateTime      @default(now()) @map("createdAt")
+
+  @@map("Document")
 }
 
-enum DocumentType {
-  CPF
-  RG
-  COMPROVANTE_RESIDENCIA
-  FOTO
-  OUTRO
+enum TipoDocumento {
+  CPF                 @map("CPF")
+  RG                  @map("RG")
+  COMPROVANTE_RESIDENCIA @map("COMPROVANTE_RESIDENCIA")
+  FOTO                @map("FOTO")
+  OUTRO               @map("OUTRO")
 }
 
-enum DocumentStatus {
-  PENDING
-  APPROVED
-  REJECTED
+enum StatusDocumento {
+  PENDENTE  @map("PENDING")
+  APROVADO  @map("APPROVED")
+  REJEITADO @map("REJECTED")
 }
 
 // Histórico de status do associado
-model MembershipHistory {
-  id          String      @id @default(uuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status      AssociatedStatus
-  notes       String?
-  createdAt   DateTime    @default(now())
-  createdBy   String?     // ID do admin que fez a ação
+model HistoricoMembership {
+  id          String        @id @default(uuid())
+  usuarioId   String        @map("userId")
+  usuario     Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  status      StatusAssociado @map("status")
+  observacoes String?       @map("notes")
+  criadoEm    DateTime      @default(now()) @map("createdAt")
+  criadoPor   String?       @map("createdBy")
+
+  @@map("MembershipHistory")
 }

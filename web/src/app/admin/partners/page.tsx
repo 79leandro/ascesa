@@ -24,22 +24,22 @@ const SIDEBAR_LINKS = [
 
 interface Partner {
   id: string;
-  name: string;
-  corporateName: string | null;
+  nome: string;
+  razaoSocial: string | null;
   cnpj: string | null;
   email: string | null;
-  phone: string | null;
-  category: string;
-  discount: string | null;
-  description: string | null;
+  telefone: string | null;
+  categoria: string;
+  desconto: string | null;
+  descricao: string | null;
   logo: string | null;
-  website: string | null;
-  status: 'ACTIVE' | 'INACTIVE' | 'PENDING';
-  contractStart: string | null;
-  contractEnd: string | null;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  site: string | null;
+  status: 'ATIVO' | 'INATIVO' | 'PENDENTE';
+  inicioContrato: string | null;
+  fimContrato: string | null;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
 }
 
 const CATEGORIES = ['Saúde', 'Educação', 'Lazer', 'Serviços', 'Outros'];
@@ -57,19 +57,19 @@ export default function AdminPartnersPage() {
 
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
-    corporateName: '',
+    nome: '',
+    razaoSocial: '',
     cnpj: '',
     email: '',
-    phone: '',
-    category: 'Saúde',
-    discount: '',
-    description: '',
-    website: '',
-    status: 'ACTIVE',
-    contractStart: '',
-    contractEnd: '',
-    isActive: true,
+    telefone: '',
+    categoria: 'Saúde',
+    desconto: '',
+    descricao: '',
+    site: '',
+    status: 'ATIVO',
+    inicioContrato: '',
+    fimContrato: '',
+    ativo: true,
   });
 
   useEffect(() => {
@@ -92,14 +92,14 @@ export default function AdminPartnersPage() {
   const fetchPartners = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_ENDPOINTS.partners.list, {
+      const res = await fetch(API_ENDPOINTS.parceiros.list, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       const data = await res.json();
       if (data.success) {
-        setPartners(data.partners);
+        setPartners(data.parceiros);
       }
     } catch (error) {
       console.error('Error fetching partners:', error);
@@ -115,8 +115,8 @@ export default function AdminPartnersPage() {
     try {
       const token = localStorage.getItem('token');
       const url = editingPartner
-        ? API_ENDPOINTS.partners.update(editingPartner.id)
-        : API_ENDPOINTS.partners.create;
+        ? API_ENDPOINTS.parceiros.update(editingPartner.id)
+        : API_ENDPOINTS.parceiros.create;
 
       const payload = {
         ...formData,
@@ -152,7 +152,7 @@ export default function AdminPartnersPage() {
   const handleToggleStatus = async (partner: Partner) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_ENDPOINTS.partners.toggleStatus(partner.id), {
+      const res = await fetch(API_ENDPOINTS.parceiros.toggleStatus(partner.id), {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -172,7 +172,7 @@ export default function AdminPartnersPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_ENDPOINTS.partners.delete(id), {
+      const res = await fetch(API_ENDPOINTS.parceiros.delete(id), {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
