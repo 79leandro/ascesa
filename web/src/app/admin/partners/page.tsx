@@ -120,8 +120,8 @@ export default function AdminPartnersPage() {
 
       const payload = {
         ...formData,
-        contractStart: formData.contractStart ? new Date(formData.contractStart).toISOString() : null,
-        contractEnd: formData.contractEnd ? new Date(formData.contractEnd).toISOString() : null,
+        inicioContrato: formData.inicioContrato ? new Date(formData.inicioContrato).toISOString() : null,
+        fimContrato: formData.fimContrato ? new Date(formData.fimContrato).toISOString() : null,
       };
 
       const res = await fetch(url, {
@@ -191,19 +191,19 @@ export default function AdminPartnersPage() {
   const openEditModal = (partner: Partner) => {
     setEditingPartner(partner);
     setFormData({
-      name: partner.name,
-      corporateName: partner.corporateName || '',
+      nome: partner.nome,
+      razaoSocial: partner.razaoSocial || '',
       cnpj: partner.cnpj || '',
       email: partner.email || '',
-      phone: partner.phone || '',
-      category: partner.category,
-      discount: partner.discount || '',
-      description: partner.description || '',
-      website: partner.website || '',
+      telefone: partner.telefone || '',
+      categoria: partner.categoria,
+      desconto: partner.desconto || '',
+      descricao: partner.descricao || '',
+      site: partner.site || '',
       status: partner.status,
-      contractStart: partner.contractStart ? partner.contractStart.split('T')[0] : '',
-      contractEnd: partner.contractEnd ? partner.contractEnd.split('T')[0] : '',
-      isActive: partner.isActive,
+      inicioContrato: partner.inicioContrato ? partner.inicioContrato.split('T')[0] : '',
+      fimContrato: partner.fimContrato ? partner.fimContrato.split('T')[0] : '',
+      ativo: partner.ativo,
     });
     setShowModal(true);
   };
@@ -211,19 +211,19 @@ export default function AdminPartnersPage() {
   const resetForm = () => {
     setEditingPartner(null);
     setFormData({
-      name: '',
-      corporateName: '',
+      nome: '',
+      razaoSocial: '',
       cnpj: '',
       email: '',
-      phone: '',
-      category: 'Saúde',
-      discount: '',
-      description: '',
-      website: '',
-      status: 'ACTIVE',
-      contractStart: '',
-      contractEnd: '',
-      isActive: true,
+      telefone: '',
+      categoria: 'Saúde',
+      desconto: '',
+      descricao: '',
+      site: '',
+      status: 'ATIVO',
+      inicioContrato: '',
+      fimContrato: '',
+      ativo: true,
     });
   };
 
@@ -261,7 +261,7 @@ export default function AdminPartnersPage() {
   const filteredPartners = partners.filter((p) => {
     const matchesFilter = filter === 'ALL' || p.status === filter;
     const matchesSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.nome.toLowerCase().includes(search.toLowerCase()) ||
       (p.cnpj && p.cnpj.includes(search)) ||
       (p.email && p.email.toLowerCase().includes(search.toLowerCase()));
     return matchesFilter && matchesSearch;
@@ -356,7 +356,7 @@ export default function AdminPartnersPage() {
               <Card key={partner.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{partner.name}</CardTitle>
+                    <CardTitle className="text-lg">{partner.nome}</CardTitle>
                     <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(partner.status)}`}>
                       {getStatusLabel(partner.status)}
                     </span>
@@ -370,12 +370,12 @@ export default function AdminPartnersPage() {
                   <div>
                     <p className="text-sm text-[var(--muted-foreground)]">Categoria</p>
                     <span className="px-2 py-1 bg-[var(--gray-100)] rounded text-xs">
-                      {partner.category}
+                      {partner.categoria}
                     </span>
                   </div>
                   <div>
                     <p className="text-sm text-[var(--muted-foreground)]">Desconto</p>
-                    <p className="text-lg font-bold text-green-600">{partner.discount || '-'}</p>
+                    <p className="text-lg font-bold text-green-600">{partner.desconto || '-'}</p>
                   </div>
                   <div className="flex gap-2 pt-2">
                     <Button
@@ -414,12 +414,12 @@ export default function AdminPartnersPage() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Nome Fantasia</p>
-                  <p className="font-medium">{selectedPartner.name}</p>
+                  <p className="font-medium">{selectedPartner.nome}</p>
                 </div>
-                {selectedPartner.corporateName && (
+                {selectedPartner.razaoSocial && (
                   <div>
                     <p className="text-sm text-[var(--muted-foreground)]">Razão Social</p>
-                    <p className="font-medium">{selectedPartner.corporateName}</p>
+                    <p className="font-medium">{selectedPartner.razaoSocial}</p>
                   </div>
                 )}
                 <div>
@@ -432,33 +432,33 @@ export default function AdminPartnersPage() {
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Telefone</p>
-                  <p className="font-medium">{selectedPartner.phone || '-'}</p>
+                  <p className="font-medium">{selectedPartner.telefone || '-'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Categoria</p>
-                  <p className="font-medium">{selectedPartner.category}</p>
+                  <p className="font-medium">{selectedPartner.categoria}</p>
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Desconto</p>
-                  <p className="font-medium text-green-600">{selectedPartner.discount || '-'}</p>
+                  <p className="font-medium text-green-600">{selectedPartner.desconto || '-'}</p>
                 </div>
-                {selectedPartner.description && (
+                {selectedPartner.descricao && (
                   <div>
                     <p className="text-sm text-[var(--muted-foreground)]">Descrição</p>
-                    <p className="font-medium">{selectedPartner.description}</p>
+                    <p className="font-medium">{selectedPartner.descricao}</p>
                   </div>
                 )}
-                {selectedPartner.website && (
+                {selectedPartner.site && (
                   <div>
                     <p className="text-sm text-[var(--muted-foreground)]">Website</p>
-                    <p className="font-medium">{selectedPartner.website}</p>
+                    <p className="font-medium">{selectedPartner.site}</p>
                   </div>
                 )}
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Contrato</p>
                   <p className="font-medium">
-                    {selectedPartner.contractStart && selectedPartner.contractEnd
-                      ? `${selectedPartner.contractStart.split('T')[0]} até ${selectedPartner.contractEnd.split('T')[0]}`
+                    {selectedPartner.inicioContrato && selectedPartner.fimContrato
+                      ? `${selectedPartner.inicioContrato.split('T')[0]} até ${selectedPartner.fimContrato.split('T')[0]}`
                       : 'A definir'}
                   </p>
                 </div>
@@ -506,8 +506,8 @@ export default function AdminPartnersPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Nome Fantasia *</label>
                       <Input
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        value={formData.nome}
+                        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                         required
                         placeholder="Nome do parceiro"
                       />
@@ -515,8 +515,8 @@ export default function AdminPartnersPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Razão Social</label>
                       <Input
-                        value={formData.corporateName}
-                        onChange={(e) => setFormData({ ...formData, corporateName: e.target.value })}
+                        value={formData.razaoSocial}
+                        onChange={(e) => setFormData({ ...formData, razaoSocial: e.target.value })}
                         placeholder="Razão social"
                       />
                     </div>
@@ -547,8 +547,8 @@ export default function AdminPartnersPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Telefone *</label>
                       <Input
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        value={formData.telefone}
+                        onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                         required
                         placeholder="(00) 00000-0000"
                       />
@@ -556,8 +556,8 @@ export default function AdminPartnersPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Categoria *</label>
                       <select
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        value={formData.categoria}
+                        onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
                         className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
                         required
                       >
@@ -572,16 +572,16 @@ export default function AdminPartnersPage() {
                     <div>
                       <label className="block text-sm font-medium mb-2">Desconto (%)</label>
                       <Input
-                        value={formData.discount}
-                        onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                        value={formData.desconto}
+                        onChange={(e) => setFormData({ ...formData, desconto: e.target.value })}
                         placeholder="Ex: 20%"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">Website</label>
                       <Input
-                        value={formData.website}
-                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                        value={formData.site}
+                        onChange={(e) => setFormData({ ...formData, site: e.target.value })}
                         placeholder="https://..."
                       />
                     </div>
@@ -590,8 +590,8 @@ export default function AdminPartnersPage() {
                   <div>
                     <label className="block text-sm font-medium mb-2">Descrição</label>
                     <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      value={formData.descricao}
+                      onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                       className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
                       rows={3}
                       placeholder="Descrição do convênio..."
@@ -603,16 +603,16 @@ export default function AdminPartnersPage() {
                       <label className="block text-sm font-medium mb-2">Início Contrato</label>
                       <Input
                         type="date"
-                        value={formData.contractStart}
-                        onChange={(e) => setFormData({ ...formData, contractStart: e.target.value })}
+                        value={formData.inicioContrato}
+                        onChange={(e) => setFormData({ ...formData, inicioContrato: e.target.value })}
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-2">Fim Contrato</label>
                       <Input
                         type="date"
-                        value={formData.contractEnd}
-                        onChange={(e) => setFormData({ ...formData, contractEnd: e.target.value })}
+                        value={formData.fimContrato}
+                        onChange={(e) => setFormData({ ...formData, fimContrato: e.target.value })}
                       />
                     </div>
                   </div>
@@ -633,11 +633,11 @@ export default function AdminPartnersPage() {
                     <div className="flex items-center gap-2 pt-6">
                       <input
                         type="checkbox"
-                        id="isActive"
-                        checked={formData.isActive}
-                        onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                        id="ativo"
+                        checked={formData.ativo}
+                        onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })}
                       />
-                      <label htmlFor="isActive" className="text-sm">Ativo</label>
+                      <label htmlFor="ativo" className="text-sm">Ativo</label>
                     </div>
                   </div>
 
