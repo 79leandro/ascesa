@@ -118,11 +118,11 @@ export class AuthService {
     }
 
     return {
-      usuario: {
+      user: {
         id: usuario.id,
         email: usuario.email,
-        nome: usuario.nome,
-        papel: usuario.papel,
+        name: usuario.nome,
+        role: usuario.papel,
         status: usuario.status,
       },
       accessToken: token,
@@ -170,11 +170,11 @@ export class AuthService {
     const token = this.generateToken(usuario);
 
     return {
-      usuario: {
+      user: {
         id: usuario.id,
         email: usuario.email,
-        nome: usuario.nome,
-        papel: usuario.papel,
+        name: usuario.nome,
+        role: usuario.papel,
       },
       accessToken: token,
     };
