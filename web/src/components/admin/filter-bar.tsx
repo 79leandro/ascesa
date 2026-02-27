@@ -8,13 +8,17 @@ interface FilterOption {
   label: string;
 }
 
+interface FilterConfig {
+  options: FilterOption[];
+  value: string;
+  onChange: (value: string) => void;
+}
+
 interface FilterBarProps {
   searchPlaceholder?: string;
   searchValue: string;
   onSearchChange: (value: string) => void;
-  filters?: FilterOption[];
-  filterValue?: string;
-  onFilterChange?: (value: string) => void;
+  filters?: FilterConfig[];
   children?: ReactNode;
 }
 
@@ -23,8 +27,6 @@ export function FilterBar({
   searchValue,
   onSearchChange,
   filters,
-  filterValue,
-  onFilterChange,
   children,
 }: FilterBarProps) {
   return (
@@ -36,19 +38,20 @@ export function FilterBar({
         onChange={(e) => onSearchChange(e.target.value)}
         className="flex-1"
       />
-      {filters && onFilterChange && (
+      {filters?.map((filter, index) => (
         <select
-          value={filterValue || ''}
-          onChange={(e) => onFilterChange(e.target.value)}
+          key={index}
+          value={filter.value}
+          onChange={(e) => filter.onChange(e.target.value)}
           className="px-4 py-2 border border-[var(--border)] rounded-lg bg-white min-w-[150px]"
         >
-          {filters.map((filter) => (
-            <option key={filter.value} value={filter.value}>
-              {filter.label}
+          {filter.options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </select>
-      )}
+      ))}
       {children}
     </div>
   );
