@@ -7,6 +7,8 @@ import {
   UseGuards,
   Get,
   Param,
+  Patch,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
@@ -14,6 +16,8 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { UPLOAD_CONSTANTS, DOCUMENT_STATUS } from '../common/constants';
 
 /**
@@ -93,5 +97,78 @@ export class DocumentsController {
     });
 
     return { success: true, documentos };
+  }
+
+  /**
+   * Lista todos os documentos (Admin)
+   */
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'DIRECTOR')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Listar todos os documentos (Admin)' })
+  async getAllDocuments(
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+  ) {
+    const where: any = {};
+
+    if (status && status !== 'ALL') {
+      where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        { usuario: { nome: { contains: search, mode: 'insensitive' } } },
+        { usuario: { email: { contains: search, mode: 'insensitive' } } },
+        { nomeArquivo: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const documentos = await this.prisma.documento.findMany({
+      where,
+      include: {
+        usuario: {
+          select: { id: true, nome: true, email: true },
+        },
+      },
+      orderBy: { criadoEm: 'desc' },
+    });
+
+    return { success: true, data: documentos };
+  }
+
+  /**
+   * Aprova documento
+   */
+  @Patch(':id/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'DIRECTOR')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Aprovar documento' })
+  async approveDocument(@Param('id') id: string) {
+    const documento = await this.prisma.documento.update({
+      where: { id },
+      data: { status: 'APROVADO' },
+    });
+
+    return { success: true, documento };
+  }
+
+  /**
+   * Rejeita documento
+   */
+  @Patch(':id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('ADMIN', 'DIRECTOR')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Rejeitar documento' })
+  async rejectDocument(@Param('id') id: string, @Body('reason') reason?: string) {
+    const documento = await this.prisma.documento.update({
+      where: { id },
+      data: { status: 'REJEITADO' },
+    });
+
+    return { success: true, documento };
   }
 }

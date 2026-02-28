@@ -1,186 +1,304 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { API_ENDPOINTS } from '@/lib/api';
+import { useAdminAuth, useDebounce } from '@/hooks';
+import { AdminLayout, FilterBar, FormModal } from '@/components/admin';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-
-const SIDEBAR_LINKS = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/benefits', label: 'Convênios', icon: '🎁' },
-  { href: '/admin/blog', label: 'Blog', icon: '📰' },
-  { href: '/admin/associates', label: 'Associados', icon: '👥' },
-  { href: '/admin/documents', label: 'Documentos', icon: '📄' },
-  { href: '/admin/payments', label: 'Pagamentos', icon: '💳' },
-  { href: '/admin/assemblies', label: 'Assembleias', icon: '🏛️' },
-  { href: '/admin/reports', label: 'Relatórios', icon: '📈' },
-  { href: '/admin/partners', label: 'Parceiros', icon: '🤝' },
-  { href: '/admin/events', label: 'Eventos', icon: '📅' },
-  { href: '/admin/forum', label: 'Fórum', icon: '💬' },
-  { href: '/admin/showcase', label: 'Vitrine', icon: '🛒' },
-  { href: '/admin/settings', label: 'Configurações', icon: '⚙️' },
-  { href: '/dashboard', label: 'Voltar ao Site', icon: '←' },
-];
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Event {
   id: string;
-  title: string;
-  date: string;
-  time: string;
-  location: string;
-  category: string;
-  enrolled: number;
-  spots: number;
-  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  titulo: string;
+  descricao: string;
+  data: string;
+  horaInicio: string;
+  horaFim: string;
+  local: string;
+  categoria: string;
+  online: boolean;
+  preco: number;
+  vagas: number;
+  imagem?: string;
+  ativo: boolean;
 }
 
 export default function AdminEventsPage() {
-  const router = useRouter();
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: '1',
-      title: 'Assembleia Geral Ordinária 2026',
-      date: '2026-03-15',
-      time: '10:00',
-      location: 'Sede ASCESA',
-      category: 'Assembleia',
-      enrolled: 45,
-      spots: 100,
-      status: 'SCHEDULED',
-    },
-    {
-      id: '2',
-      title: 'Workshop: Educação Financeira',
-      date: '2026-03-20',
-      time: '14:00',
-      location: 'Online',
-      category: 'Workshop',
-      enrolled: 32,
-      spots: 50,
-      status: 'SCHEDULED',
-    },
-    {
-      id: '3',
-      title: 'Palestra: Benefícios do Associado',
-      date: '2026-02-25',
-      time: '19:00',
-      location: 'Auditório Principal',
-      category: 'Palestra',
-      enrolled: 67,
-      spots: 80,
-      status: 'COMPLETED',
-    },
-  ]);
+  useAdminAuth();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showModal, setShowModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    titulo: '',
+    descricao: '',
+    data: '',
+    horaInicio: '',
+    horaFim: '',
+    local: '',
+    categoria: 'Evento',
+    online: false,
+    preco: 0,
+    vagas: 50,
+    ativo: true,
+  });
+
+  const debouncedSearch = useDebounce(search);
 
   useEffect(() => {
-    checkAuth();
+    fetchEvents();
   }, []);
 
-  const checkAuth = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const userData = JSON.parse(user);
-      if (userData.role !== 'ADMIN' && userData.role !== 'DIRECTOR') {
-        router.push('/dashboard');
+  const fetchEvents = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.events.list, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) setEvents(data.eventos || data.data || []);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const url = editingEvent
+        ? API_ENDPOINTS.events.update(editingEvent.id)
+        : API_ENDPOINTS.events.create;
+      const res = await fetch(url, {
+        method: editingEvent ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchEvents();
+        setShowModal(false);
+        resetForm();
+      } else {
+        alert(data.message || 'Erro ao salvar evento');
       }
-    } else {
-      router.push('/login');
+    } catch (error) {
+      console.error('Error saving event:', error);
+      alert('Erro ao salvar evento');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'SCHEDULED': return 'bg-blue-100 text-blue-800';
-      case 'IN_PROGRESS': return 'bg-green-100 text-green-800';
-      case 'COMPLETED': return 'bg-gray-100 text-gray-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const handleToggleStatus = async (event: Event) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.events.update(event.id), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ativo: !event.ativo }),
+      });
+      const data = await res.json();
+      if (data.success) fetchEvents();
+    } catch (error) {
+      console.error('Error toggling status:', error);
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'SCHEDULED': return 'Agendado';
-      case 'IN_PROGRESS': return 'Em Andamento';
-      case 'COMPLETED': return 'Encerrado';
-      case 'CANCELLED': return 'Cancelado';
-      default: return status;
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.events.delete(id), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) fetchEvents();
+    } catch (error) {
+      console.error('Error deleting event:', error);
     }
   };
+
+  const openEditModal = (event: Event) => {
+    setEditingEvent(event);
+    setFormData({
+      titulo: event.titulo,
+      descricao: event.descricao || '',
+      data: event.data ? event.data.split('T')[0] : '',
+      horaInicio: event.horaInicio || '',
+      horaFim: event.horaFim || '',
+      local: event.local || '',
+      categoria: event.categoria,
+      online: event.online || false,
+      preco: event.preco || 0,
+      vagas: event.vagas || 50,
+      ativo: event.ativo,
+    });
+    setShowModal(true);
+  };
+
+  const resetForm = () => {
+    setEditingEvent(null);
+    setFormData({
+      titulo: '', descricao: '', data: '', horaInicio: '', horaFim: '',
+      local: '', categoria: 'Evento', online: false, preco: 0, vagas: 50, ativo: true,
+    });
+  };
+
+  const filteredEvents = events.filter((e) => {
+    const matchesSearch = e.titulo.toLowerCase().includes(debouncedSearch.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || e.categoria === categoryFilter;
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'ATIVO' && e.ativo) || (statusFilter === 'INATIVO' && !e.ativo);
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
+  const filterOptions = [
+    { value: 'all', label: 'Todas as categorias' },
+    { value: 'Evento', label: 'Evento' },
+    { value: 'Workshop', label: 'Workshop' },
+    { value: 'Palestra', label: 'Palestra' },
+    { value: 'Webinar', label: 'Webinar' },
+  ];
+
+  const statusOptions = [
+    { value: 'all', label: 'Todos os status' },
+    { value: 'ATIVO', label: 'Ativo' },
+    { value: 'INATIVO', label: 'Inativo' },
+  ];
 
   return (
-    <div>
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-[var(--foreground)]">Gerenciar Eventos</h1>
-          <Button>+ Novo Evento</Button>
-        </div>
+    <AdminLayout
+      title="Gerenciar Eventos"
+      actions={<Button onClick={() => { resetForm(); setShowModal(true); }}>+ Novo Evento</Button>}
+    >
+      <FilterBar
+        searchPlaceholder="Buscar eventos..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        filters={[
+          { options: filterOptions, value: categoryFilter, onChange: setCategoryFilter },
+          { options: statusOptions, value: statusFilter, onChange: setStatusFilter },
+        ]}
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-[var(--primary)]">{events.length}</p>
-              <p className="text-[var(--muted-foreground)]">Total de Eventos</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-blue-600">
-                {events.filter(e => e.status === 'SCHEDULED').length}
-              </p>
-              <p className="text-[var(--muted-foreground)]">Agendados</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-green-600">
-                {events.reduce((acc, e) => acc + e.enrolled, 0)}
-              </p>
-              <p className="text-[var(--muted-foreground)]">Total de Inscritos</p>
-            </CardContent>
-          </Card>
+      {loading ? (
+        <div className="text-center py-12">Carregando...</div>
+      ) : (
+        <div className="bg-white rounded-xl border border-[var(--border)] overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-[var(--gray-50)]">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-medium">Título</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Data</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Local</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Categoria</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Vagas</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Status</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEvents.map((event) => (
+                <tr key={event.id} className="border-t border-[var(--border)]">
+                  <td className="px-6 py-4">{event.titulo}</td>
+                  <td className="px-6 py-4">
+                    {event.data ? new Date(event.data).toLocaleDateString('pt-BR') : '-'}
+                  </td>
+                  <td className="px-6 py-4 text-muted-foreground">{event.local || (event.online ? 'Online' : '-')}</td>
+                  <td className="px-6 py-4"><span className="px-2 py-1 bg-gray-100 rounded text-sm">{event.categoria}</span></td>
+                  <td className="px-6 py-4">{event.vagas || '-'}</td>
+                  <td className="px-6 py-4">
+                    <StatusBadge status={event.ativo ? 'ATIVO' : 'INATIVO'} onClick={() => handleToggleStatus(event)} />
+                  </td>
+                  <td className="px-6 py-4">
+                    <button onClick={() => openEditModal(event)} className="text-secondary hover:underline mr-3">Editar</button>
+                    <button onClick={() => handleDelete(event.id)} className="text-red-500 hover:underline">Excluir</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Eventos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4">Título</th>
-                    <th className="text-left py-3 px-4">Data</th>
-                    <th className="text-left py-3 px-4">Categoria</th>
-                    <th className="text-left py-3 px-4">Inscritos</th>
-                    <th className="text-left py-3 px-4">Status</th>
-                    <th className="text-left py-3 px-4">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {events.map((event) => (
-                    <tr key={event.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium">{event.title}</td>
-                      <td className="py-3 px-4">
-                        {new Date(event.date).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="py-3 px-4">{event.category}</td>
-                      <td className="py-3 px-4">{event.enrolled}/{event.spots}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(event.status)}`}>
-                          {getStatusLabel(event.status)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Button variant="outline" size="sm">Editar</Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {filteredEvents.length === 0 && !loading && <div className="text-center py-12 text-muted-foreground">Nenhum evento encontrado.</div>}
+
+      <FormModal
+        isOpen={showModal}
+        onClose={() => { setShowModal(false); resetForm(); }}
+        title={editingEvent ? 'Editar Evento' : 'Novo Evento'}
+        onSubmit={handleSubmit}
+        loading={saving}
+        submitLabel={editingEvent ? 'Atualizar' : 'Criar'}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Título *</label>
+            <Input value={formData.titulo} onChange={(e) => setFormData({ ...formData, titulo: e.target.value })} required placeholder="Título do evento" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Descrição</label>
+            <textarea value={formData.descricao} onChange={(e) => setFormData({ ...formData, descricao: e.target.value })} className="w-full px-3 py-2 border rounded-lg" rows={3} placeholder="Descrição do evento" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Data</label>
+              <Input type="date" value={formData.data} onChange={(e) => setFormData({ ...formData, data: e.target.value })} />
             </div>
-          </CardContent>
-        </Card>
-    </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Categoria</label>
+              <select value={formData.categoria} onChange={(e) => setFormData({ ...formData, categoria: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                <option value="Evento">Evento</option>
+                <option value="Workshop">Workshop</option>
+                <option value="Palestra">Palestra</option>
+                <option value="Webinar">Webinar</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Hora Início</label>
+              <Input type="time" value={formData.horaInicio} onChange={(e) => setFormData({ ...formData, horaInicio: e.target.value })} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Hora Fim</label>
+              <Input type="time" value={formData.horaFim} onChange={(e) => setFormData({ ...formData, horaFim: e.target.value })} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Local</label>
+            <Input value={formData.local} onChange={(e) => setFormData({ ...formData, local: e.target.value })} placeholder="Local do evento" />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Vagas</label>
+              <Input type="number" value={formData.vagas} onChange={(e) => setFormData({ ...formData, vagas: parseInt(e.target.value) || 0 })} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Preço</label>
+              <Input type="number" step="0.01" value={formData.preco} onChange={(e) => setFormData({ ...formData, preco: parseFloat(e.target.value) || 0 })} />
+            </div>
+            <div className="flex items-center gap-2 pt-6">
+              <input type="checkbox" id="online" checked={formData.online} onChange={(e) => setFormData({ ...formData, online: e.target.checked })} />
+              <label htmlFor="online" className="text-sm">Online</label>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="ativo" checked={formData.ativo} onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })} />
+            <label htmlFor="ativo" className="text-sm">Ativo</label>
+          </div>
+        </div>
+      </FormModal>
+    </AdminLayout>
   );
 }

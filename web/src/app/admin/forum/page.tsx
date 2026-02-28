@@ -1,198 +1,218 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { API_ENDPOINTS } from '@/lib/api';
+import { useAdminAuth, useDebounce } from '@/hooks';
+import { AdminLayout, FilterBar } from '@/components/admin';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-
-const SIDEBAR_LINKS = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/benefits', label: 'Convênios', icon: '🎁' },
-  { href: '/admin/blog', label: 'Blog', icon: '📰' },
-  { href: '/admin/associates', label: 'Associados', icon: '👥' },
-  { href: '/admin/documents', label: 'Documentos', icon: '📄' },
-  { href: '/admin/payments', label: 'Pagamentos', icon: '💳' },
-  { href: '/admin/assemblies', label: 'Assembleias', icon: '🏛️' },
-  { href: '/admin/reports', label: 'Relatórios', icon: '📈' },
-  { href: '/admin/partners', label: 'Parceiros', icon: '🤝' },
-  { href: '/admin/events', label: 'Eventos', icon: '📅' },
-  { href: '/admin/forum', label: 'Fórum', icon: '💬' },
-  { href: '/admin/showcase', label: 'Vitrine', icon: '🛒' },
-  { href: '/admin/settings', label: 'Configurações', icon: '⚙️' },
-  { href: '/dashboard', label: 'Voltar ao Site', icon: '←' },
-];
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Topic {
   id: string;
-  title: string;
-  author: string;
-  category: string;
-  replies: number;
-  views: number;
-  isPinned: boolean;
-  isLocked: boolean;
-  createdAt: string;
+  titulo: string;
+  conteudo: string;
+  autor: string;
+  categoria: string;
+  fixado: boolean;
+  fechado: boolean;
+  visualizacoes: number;
+  criadoEm: string;
+  _count?: { respostas: number };
 }
 
 export default function AdminForumPage() {
-  const router = useRouter();
-  const [topics] = useState<Topic[]>([
-    {
-      id: '1',
-      title: 'Dúvidas sobre benefícios',
-      author: 'João Silva',
-      category: 'Benefícios',
-      replies: 12,
-      views: 234,
-      isPinned: true,
-      isLocked: false,
-      createdAt: '2026-02-20',
-    },
-    {
-      id: '2',
-      title: 'Reunião de associado - Fevereiro',
-      author: 'Maria Santos',
-      category: 'Eventos',
-      replies: 8,
-      views: 156,
-      isPinned: false,
-      isLocked: false,
-      createdAt: '2026-02-22',
-    },
-    {
-      id: '3',
-      title: 'Dicas de economia',
-      author: 'Pedro Oliveira',
-      category: 'Finanças',
-      replies: 25,
-      views: 456,
-      isPinned: false,
-      isLocked: false,
-      createdAt: '2026-02-15',
-    },
-    {
-      id: '4',
-      title: 'Novo convênio de saúde',
-      author: 'Ana Costa',
-      category: 'Benefícios',
-      replies: 0,
-      views: 89,
-      isPinned: false,
-      isLocked: true,
-      createdAt: '2026-02-23',
-    },
-  ]);
+  useAdminAuth();
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [showModal, setShowModal] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+
+  const debouncedSearch = useDebounce(search);
 
   useEffect(() => {
-    checkAuth();
+    fetchTopics();
   }, []);
 
-  const checkAuth = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const userData = JSON.parse(user);
-      if (userData.role !== 'ADMIN' && userData.role !== 'DIRECTOR') {
-        router.push('/dashboard');
-      }
-    } else {
-      router.push('/login');
+  const fetchTopics = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.forum.list, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) setTopics(data.topicos || data.data || []);
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const totalReplies = topics.reduce((acc, t) => acc + t.replies, 0);
-  const totalViews = topics.reduce((acc, t) => acc + t.views, 0);
+  const handleTogglePin = async (topic: Topic) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.forum.update(topic.id), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ fixado: !topic.fixado }),
+      });
+      const data = await res.json();
+      if (data.success) fetchTopics();
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+    }
+  };
+
+  const handleToggleLock = async (topic: Topic) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.forum.update(topic.id), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ fechado: !topic.fechado }),
+      });
+      const data = await res.json();
+      if (data.success) fetchTopics();
+    } catch (error) {
+      console.error('Error toggling lock:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.forum.delete(id), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) fetchTopics();
+    } catch (error) {
+      console.error('Error deleting topic:', error);
+    }
+  };
+
+  const filteredTopics = topics.filter((t) => {
+    const matchesSearch = t.titulo.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      t.autor?.toLowerCase().includes(debouncedSearch.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || t.categoria === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  const filterOptions = [
+    { value: 'all', label: 'Todas as categorias' },
+    { value: 'Geral', label: 'Geral' },
+    { value: 'Benefícios', label: 'Benefícios' },
+    { value: 'Eventos', label: 'Eventos' },
+    { value: 'Dúvidas', label: 'Dúvidas' },
+    { value: 'Sugestões', label: 'Sugestões' },
+  ];
 
   return (
-    <div>
-        <h1 className="text-3xl font-bold text-[var(--foreground)] mb-8">Gerenciar Fórum</h1>
+    <AdminLayout
+      title="Gerenciar Fórum"
+      actions={<span className="text-sm text-muted-foreground">{filteredTopics.length} tópicos</span>}
+    >
+      <FilterBar
+        searchPlaceholder="Buscar tópicos..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        filters={[
+          { options: filterOptions, value: categoryFilter, onChange: setCategoryFilter },
+        ]}
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-[var(--primary)]">{topics.length}</p>
-              <p className="text-[var(--muted-foreground)]">Tópicos</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-blue-600">{totalReplies}</p>
-              <p className="text-[var(--muted-foreground)]">Respostas</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-green-600">{totalViews}</p>
-              <p className="text-[var(--muted-foreground)]">Visualizações</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-purple-600">
-                {topics.filter(t => t.isLocked).length}
-              </p>
-              <p className="text-[var(--muted-foreground)]">Bloqueados</p>
+      {loading ? (
+        <div className="text-center py-12">Carregando...</div>
+      ) : (
+        <div className="bg-white rounded-xl border border-[var(--border)] overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-[var(--gray-50)]">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-medium">Título</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Autor</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Categoria</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Respostas</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Visualizações</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Status</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTopics.map((topic) => (
+                <tr key={topic.id} className="border-t border-[var(--border)]">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      {topic.fixado && <span className="text-yellow-500" title="Fixado">📌</span>}
+                      {topic.fechado && <span className="text-red-500" title="Fechado">🔒</span>}
+                      <span className="font-medium">{topic.titulo}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-muted-foreground">{topic.autor || '-'}</td>
+                  <td className="px-6 py-4"><span className="px-2 py-1 bg-gray-100 rounded text-sm">{topic.categoria}</span></td>
+                  <td className="px-6 py-4">{topic._count?.respostas || 0}</td>
+                  <td className="px-6 py-4">{topic.visualizacoes || 0}</td>
+                  <td className="px-6 py-4">
+                    <StatusBadge status={topic.fechado ? 'FECHADO' : 'ATIVO'} />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <button onClick={() => setSelectedTopic(topic)} className="text-secondary hover:underline">Ver</button>
+                      <button onClick={() => handleTogglePin(topic)} className="text-yellow-600 hover:underline">
+                        {topic.fixado ? 'Desfixar' : 'Fixar'}
+                      </button>
+                      <button onClick={() => handleToggleLock(topic)} className="text-orange-600 hover:underline">
+                        {topic.fechado ? 'Abrir' : 'Fechar'}
+                      </button>
+                      <button onClick={() => handleDelete(topic.id)} className="text-red-500 hover:underline">Excluir</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {filteredTopics.length === 0 && !loading && <div className="text-center py-12 text-muted-foreground">Nenhum tópico encontrado.</div>}
+
+      {/* Topic Detail Modal */}
+      {selectedTopic && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <CardHeader>
+              <CardTitle>{selectedTopic.titulo}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="text-sm text-[var(--muted-foreground)]">Autor</p>
+                <p className="font-medium">{selectedTopic.autor || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-[var(--muted-foreground)]">Categoria</p>
+                <p className="font-medium">{selectedTopic.categoria}</p>
+              </div>
+              <div>
+                <p className="text-sm text-[var(--muted-foreground)]">Conteúdo</p>
+                <p className="font-medium">{selectedTopic.conteudo || '-'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-[var(--muted-foreground)]">Data de Criação</p>
+                <p className="font-medium">
+                  {selectedTopic.criadoEm ? new Date(selectedTopic.criadoEm).toLocaleDateString('pt-BR') : '-'}
+                </p>
+              </div>
+              <div className="flex gap-2 pt-4 border-t">
+                <Button onClick={() => setSelectedTopic(null)}>Fechar</Button>
+              </div>
             </CardContent>
           </Card>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Tópicos do Fórum</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4">Título</th>
-                    <th className="text-left py-3 px-4">Autor</th>
-                    <th className="text-left py-3 px-4">Categoria</th>
-                    <th className="text-left py-3 px-4">Respostas</th>
-                    <th className="text-left py-3 px-4">Views</th>
-                    <th className="text-left py-3 px-4">Status</th>
-                    <th className="text-left py-3 px-4">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topics.map((topic) => (
-                    <tr key={topic.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          {topic.isPinned && <span>📌</span>}
-                          {topic.isLocked && <span>🔒</span>}
-                          <span className="font-medium">{topic.title}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">{topic.author}</td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-1 bg-gray-100 rounded text-xs">{topic.category}</span>
-                      </td>
-                      <td className="py-3 px-4">{topic.replies}</td>
-                      <td className="py-3 px-4">{topic.views}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          topic.isLocked ? 'bg-red-100 text-red-800' :
-                          topic.isPinned ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {topic.isLocked ? 'Bloqueado' : topic.isPinned ? 'Fixado' : 'Ativo'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">Editar</Button>
-                          <Button variant="outline" size="sm">
-                            {topic.isLocked ? 'Desbloquear' : 'Bloquear'}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-    </div>
+      )}
+    </AdminLayout>
   );
 }

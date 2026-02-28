@@ -11,6 +11,9 @@ export const API_ENDPOINTS = {
   documents: {
     upload: `${API_URL}/documents/upload`,
     list: (userId: string) => `${API_URL}/documents/user/${userId}`,
+    adminList: `${API_URL}/documents/admin`,
+    approve: (id: string) => `${API_URL}/documents/${id}/approve`,
+    reject: (id: string) => `${API_URL}/documents/${id}/reject`,
   },
   users: {
     profile: (userId: string) => `${API_URL}/users/${userId}`,

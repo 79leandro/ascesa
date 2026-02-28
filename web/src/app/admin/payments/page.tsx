@@ -1,6 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { API_ENDPOINTS } from '@/lib/api';
+import { useAdminAuth } from '@/hooks';
+import { AdminLayout, FilterBar } from '@/components/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -8,6 +12,7 @@ interface Payment {
   id: string;
   associateName: string;
   associateEmail: string;
+  associateId: string;
   amount: number;
   dueDate: string;
   paidDate: string | null;
@@ -16,93 +21,127 @@ interface Payment {
   year: number;
 }
 
+interface Stats {
+  totalPaid: number;
+  totalPending: number;
+  totalOverdue: number;
+  totalAmount: number;
+}
+
 export default function AdminPaymentsPage() {
+  useAdminAuth();
   const router = useRouter();
-  const [payments, setPayments] = useState<Payment[]>([
-    {
-      id: '1',
-      associateName: 'João Silva Santos',
-      associateEmail: 'joao@teste.com',
-      amount: 50.0,
-      dueDate: '2026-02-10',
-      paidDate: '2026-02-05',
-      status: 'PAID',
-      month: 'Fevereiro',
-      year: 2026,
-    },
-    {
-      id: '2',
-      associateName: 'Maria Oliveira',
-      associateEmail: 'maria@teste.com',
-      amount: 50.0,
-      dueDate: '2026-02-10',
-      paidDate: null,
-      status: 'PENDING',
-      month: 'Fevereiro',
-      year: 2026,
-    },
-    {
-      id: '3',
-      associateName: 'Pedro Santos',
-      associateEmail: 'pedro@teste.com',
-      amount: 50.0,
-      dueDate: '2026-02-10',
-      paidDate: null,
-      status: 'OVERDUE',
-      month: 'Fevereiro',
-      year: 2026,
-    },
-    {
-      id: '4',
-      associateName: 'Ana Costa',
-      associateEmail: 'ana@teste.com',
-      amount: 50.0,
-      dueDate: '2026-01-10',
-      paidDate: '2026-01-08',
-      status: 'PAID',
-      month: 'Janeiro',
-      year: 2026,
-    },
-    {
-      id: '5',
-      associateName: 'Carlos Lima',
-      associateEmail: 'carlos@teste.com',
-      amount: 50.0,
-      dueDate: '2026-01-10',
-      paidDate: null,
-      status: 'OVERDUE',
-      month: 'Janeiro',
-      year: 2026,
-    },
-    {
-      id: '6',
-      associateName: 'Fernanda Silva',
-      associateEmail: 'fernanda@teste.com',
-      amount: 50.0,
-      dueDate: '2025-12-10',
-      paidDate: '2025-12-15',
-      status: 'PAID',
-      month: 'Dezembro',
-      year: 2025,
-    },
-  ]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [stats, setStats] = useState<Stats>({ totalPaid: 0, totalPending: 0, totalOverdue: 0, totalAmount: 0 });
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    checkAuth();
+    fetchPayments();
+    fetchStats();
   }, []);
 
-  const checkAuth = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const userData = JSON.parse(user);
-      if (userData.role !== 'ADMIN' && userData.role !== 'DIRECTOR') {
-        router.push('/dashboard');
+  const fetchPayments = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const queryParams = new URLSearchParams({
+        status: filter !== 'ALL' ? filter : '',
+        search,
+      });
+
+      const res = await fetch(`${API_ENDPOINTS.payments.list}?${queryParams}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPayments(data.data || []);
       }
-    } else {
-      router.push('/login');
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.payments.stats, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStats(data.data || { totalPaid: 0, totalPending: 0, totalOverdue: 0, totalAmount: 0 });
+      }
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPayments();
+  }, [filter, search]);
+
+  const markAsPaid = async (paymentId: string) => {
+    setActionLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.payments.markPaid(paymentId), {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchPayments();
+        fetchStats();
+        setSelectedPayment(null);
+        alert('Pagamento registrado com sucesso!');
+      } else {
+        alert(data.message || 'Erro ao registrar pagamento');
+      }
+    } catch (error) {
+      console.error('Error marking as paid:', error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const sendReminder = async (paymentId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.payments.sendReminder(paymentId), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Lembrete enviado com sucesso!');
+      } else {
+        alert(data.message || 'Erro ao enviar lembrete');
+      }
+    } catch (error) {
+      console.error('Error sending reminder:', error);
+    }
+  };
+
+  const sendBulkReminders = async () => {
+    if (!confirm('Enviar lembretes para todos os associados com pagamento pendente/atrasado?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const overduePayments = payments.filter(p => p.status !== 'PAID');
+      for (const payment of overduePayments) {
+        await fetch(API_ENDPOINTS.payments.sendReminder(payment.id), {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+      alert('Lembretes enviados com sucesso!');
+    } catch (error) {
+      console.error('Error sending bulk reminders:', error);
     }
   };
 
@@ -142,89 +181,106 @@ export default function AdminPaymentsPage() {
   const filteredPayments = payments.filter(p => {
     const matchesFilter = filter === 'ALL' || p.status === filter;
     const matchesSearch =
-      p.associateName.toLowerCase().includes(search.toLowerCase()) ||
-      p.associateEmail.toLowerCase().includes(search.toLowerCase());
+      p.associateName?.toLowerCase().includes(search.toLowerCase()) ||
+      p.associateEmail?.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
-  const totalPaid = payments.filter(p => p.status === 'PAID').reduce((acc, p) => acc + p.amount, 0);
-  const totalPending = payments.filter(p => p.status === 'PENDING').reduce((acc, p) => acc + p.amount, 0);
-  const totalOverdue = payments.filter(p => p.status === 'OVERDUE').reduce((acc, p) => acc + p.amount, 0);
+  const { totalPaid, totalPending, totalOverdue, totalAmount } = stats;
 
-  const markAsPaid = (paymentId: string) => {
-    setPayments(prev =>
-      prev.map(p =>
-        p.id === paymentId
-          ? { ...p, status: 'PAID' as const, paidDate: new Date().toISOString().split('T')[0] }
-          : p
-      )
-    );
-    setSelectedPayment(null);
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PAID':
+        return 'bg-green-100 text-green-800';
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'OVERDUE':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const sendReminder = (paymentId: string) => {
-    alert('Lembrete enviado com sucesso!');
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'PAID':
+        return 'Pago';
+      case 'PENDING':
+        return 'Pendente';
+      case 'OVERDUE':
+        return 'Atrasado';
+      default:
+        return status;
+    }
   };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value || 0);
+  };
+
+  const filterOptions = [
+    { value: 'ALL', label: 'Todos' },
+    { value: 'PAID', label: 'Pagos' },
+    { value: 'PENDING', label: 'Pendentes' },
+    { value: 'OVERDUE', label: 'Atrasados' },
+  ];
 
   return (
-    <div>
-        <h1 className="text-3xl font-bold text-[var(--foreground)] mb-8">Controle de Pagamentos</h1>
+    <AdminLayout
+      title="Controle de Pagamentos"
+      actions={
+        <Button variant="outline" onClick={sendBulkReminders}>
+          📧 Enviar Lembretes
+        </Button>
+      }
+    >
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-[var(--muted-foreground)]">Total Recebido</p>
+            <p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-[var(--muted-foreground)]">Pendente</p>
+            <p className="text-2xl font-bold text-yellow-600">{formatCurrency(totalPending)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-[var(--muted-foreground)]">Inadimplente</p>
+            <p className="text-2xl font-bold text-red-600">{formatCurrency(totalOverdue)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-[var(--muted-foreground)]">Taxa de Inadimplência</p>
+            <p className="text-2xl font-bold">
+              {totalAmount > 0 ? ((totalOverdue / totalAmount) * 100).toFixed(1) : 0}%
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-sm text-[var(--muted-foreground)]">Total Recebido</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-sm text-[var(--muted-foreground)]">Pendente</p>
-              <p className="text-2xl font-bold text-yellow-600">{formatCurrency(totalPending)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-sm text-[var(--muted-foreground)]">Inadimplente</p>
-              <p className="text-2xl font-bold text-red-600">{formatCurrency(totalOverdue)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-sm text-[var(--muted-foreground)]">Taxa de Inadimplência</p>
-              <p className="text-2xl font-bold">
-                {((totalOverdue / (totalPaid + totalPending + totalOverdue)) * 100).toFixed(1)}%
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Filters */}
+      <FilterBar
+        searchPlaceholder="Buscar por nome ou email..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        filters={[
+          { options: filterOptions, value: filter, onChange: setFilter },
+        ]}
+      />
 
-        {/* Filters */}
-        <div className="flex gap-4 mb-6">
-          <input
-            type="text"
-            placeholder="Buscar por nome ou email..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="px-4 py-2 border border-[var(--border)] rounded-lg flex-1 bg-white"
-          />
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="px-4 py-2 border border-[var(--border)] rounded-lg bg-white"
-          >
-            <option value="ALL">Todos</option>
-            <option value="PAID">Pagos</option>
-            <option value="PENDING">Pendentes</option>
-            <option value="OVERDUE">Atrasados</option>
-          </select>
-          <Button variant="outline">
-            📧 Enviar Lembretes
-          </Button>
-        </div>
-
-        {/* Payments Table */}
+      {/* Payments Table */}
+      {loading ? (
+        <div className="text-center py-12">Carregando...</div>
+      ) : (
         <Card>
           <CardHeader>
             <CardTitle>Lista de Pagamentos</CardTitle>
@@ -288,6 +344,7 @@ export default function AdminPaymentsPage() {
                                 size="sm"
                                 className="bg-green-600 hover:bg-green-700"
                                 onClick={() => markAsPaid(payment.id)}
+                                disabled={actionLoading}
                               >
                                 Registrar
                               </Button>
@@ -349,8 +406,9 @@ export default function AdminPaymentsPage() {
                       <Button
                         className="flex-1 bg-green-600 hover:bg-green-700"
                         onClick={() => markAsPaid(selectedPayment.id)}
+                        disabled={actionLoading}
                       >
-                        Registrar Pagamento
+                        {actionLoading ? 'Processando...' : 'Registrar Pagamento'}
                       </Button>
                       <Button
                         variant="outline"
@@ -373,6 +431,6 @@ export default function AdminPaymentsPage() {
             </Card>
           </div>
         )}
-    </div>
+    </AdminLayout>
   );
 }

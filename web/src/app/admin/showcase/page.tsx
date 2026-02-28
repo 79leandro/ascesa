@@ -1,185 +1,290 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { API_ENDPOINTS } from '@/lib/api';
+import { useAdminAuth, useDebounce } from '@/hooks';
+import { AdminLayout, FilterBar, FormModal } from '@/components/admin';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
-
-const SIDEBAR_LINKS = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/benefits', label: 'Convênios', icon: '🎁' },
-  { href: '/admin/blog', label: 'Blog', icon: '📰' },
-  { href: '/admin/associates', label: 'Associados', icon: '👥' },
-  { href: '/admin/documents', label: 'Documentos', icon: '📄' },
-  { href: '/admin/payments', label: 'Pagamentos', icon: '💳' },
-  { href: '/admin/assemblies', label: 'Assembleias', icon: '🏛️' },
-  { href: '/admin/reports', label: 'Relatórios', icon: '📈' },
-  { href: '/admin/partners', label: 'Parceiros', icon: '🤝' },
-  { href: '/admin/events', label: 'Eventos', icon: '📅' },
-  { href: '/admin/forum', label: 'Fórum', icon: '💬' },
-  { href: '/admin/showcase', label: 'Vitrine', icon: '🛒' },
-  { href: '/admin/settings', label: 'Configurações', icon: '⚙️' },
-  { href: '/dashboard', label: 'Voltar ao Site', icon: '←' },
-];
+import { Input } from '@/components/ui/input';
 
 interface Product {
   id: string;
-  name: string;
-  price: number;
-  category: string;
-  seller: string;
-  condition: string;
-  views: number;
-  status: 'ACTIVE' | 'INACTIVE';
-  createdAt: string;
+  nome: string;
+  descricao: string;
+  preco: number;
+  precoOriginal?: number;
+  categoria: string;
+  vendedor: string;
+  contatoVendedor: string;
+  condicao: string;
+  visualizacoes: number;
+  ativo: boolean;
 }
 
 export default function AdminShowcasePage() {
-  const router = useRouter();
-  const [products] = useState<Product[]>([
-    {
-      id: '1',
-      name: 'iPhone 14 Pro Max',
-      price: 4500,
-      category: 'Eletrônicos',
-      seller: 'João Silva',
-      condition: 'Usado',
-      views: 234,
-      status: 'ACTIVE',
-      createdAt: '2026-02-20',
-    },
-    {
-      id: '2',
-      name: 'Sofá 3 Lugares',
-      price: 800,
-      category: 'Móveis',
-      seller: 'Maria Santos',
-      condition: 'Usado',
-      views: 156,
-      status: 'ACTIVE',
-      createdAt: '2026-02-18',
-    },
-    {
-      id: '3',
-      name: 'Smart TV 50 Polegadas',
-      price: 1800,
-      category: 'Eletrônicos',
-      seller: 'Carlos Lima',
-      condition: 'Usado',
-      views: 312,
-      status: 'INACTIVE',
-      createdAt: '2026-02-10',
-    },
-  ]);
+  useAdminAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    nome: '',
+    descricao: '',
+    preco: 0,
+    precoOriginal: 0,
+    categoria: 'Outros',
+    condicao: 'USADO',
+    contatoVendedor: '',
+    ativo: true,
+  });
+
+  const debouncedSearch = useDebounce(search);
 
   useEffect(() => {
-    checkAuth();
+    fetchProducts();
   }, []);
 
-  const checkAuth = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const userData = JSON.parse(user);
-      if (userData.role !== 'ADMIN' && userData.role !== 'DIRECTOR') {
-        router.push('/dashboard');
-      }
-    } else {
-      router.push('/login');
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.showcase.list, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) setProducts(data.produtos || data.data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const totalValue = products.reduce((acc, p) => acc + p.price, 0);
-  const activeProducts = products.filter(p => p.status === 'ACTIVE').length;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const url = editingProduct
+        ? API_ENDPOINTS.showcase.update(editingProduct.id)
+        : API_ENDPOINTS.showcase.create;
+      const res = await fetch(url, {
+        method: editingProduct ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchProducts();
+        setShowModal(false);
+        resetForm();
+      } else {
+        alert(data.message || 'Erro ao salvar produto');
+      }
+    } catch (error) {
+      console.error('Error saving product:', error);
+      alert('Erro ao salvar produto');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleStatus = async (product: Product) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.showcase.update(product.id), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ativo: !product.ativo }),
+      });
+      const data = await res.json();
+      if (data.success) fetchProducts();
+    } catch (error) {
+      console.error('Error toggling status:', error);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.showcase.delete(id), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) fetchProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
+
+  const openEditModal = (product: Product) => {
+    setEditingProduct(product);
+    setFormData({
+      nome: product.nome,
+      descricao: product.descricao || '',
+      preco: product.preco || 0,
+      precoOriginal: product.precoOriginal || 0,
+      categoria: product.categoria,
+      condicao: product.condicao,
+      contatoVendedor: product.contatoVendedor || '',
+      ativo: product.ativo,
+    });
+    setShowModal(true);
+  };
+
+  const resetForm = () => {
+    setEditingProduct(null);
+    setFormData({
+      nome: '', descricao: '', preco: 0, precoOriginal: 0,
+      categoria: 'Outros', condicao: 'USADO', contatoVendedor: '', ativo: true,
+    });
+  };
+
+  const filteredProducts = products.filter((p) => {
+    const matchesSearch = p.nome.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      p.vendedor?.toLowerCase().includes(debouncedSearch.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || p.categoria === categoryFilter;
+    const matchesStatus = statusFilter === 'all' || (statusFilter === 'ATIVO' && p.ativo) || (statusFilter === 'INATIVO' && !p.ativo);
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
+  const filterOptions = [
+    { value: 'all', label: 'Todas as categorias' },
+    { value: 'Eletrônicos', label: 'Eletrônicos' },
+    { value: 'Móveis', label: 'Móveis' },
+    { value: 'Veículos', label: 'Veículos' },
+    { value: 'Outros', label: 'Outros' },
+  ];
+
+  const statusOptions = [
+    { value: 'all', label: 'Todos os status' },
+    { value: 'ATIVO', label: 'Ativo' },
+    { value: 'INATIVO', label: 'Inativo' },
+  ];
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
+  };
 
   return (
-    <div>
-        <h1 className="text-3xl font-bold text-[var(--foreground)] mb-8">Gerenciar Vitrine Virtual</h1>
+    <AdminLayout
+      title="Gerenciar Vitrine Virtual"
+      actions={<Button onClick={() => { resetForm(); setShowModal(true); }}>+ Novo Anúncio</Button>}
+    >
+      <FilterBar
+        searchPlaceholder="Buscar produtos..."
+        searchValue={search}
+        onSearchChange={setSearch}
+        filters={[
+          { options: filterOptions, value: categoryFilter, onChange: setCategoryFilter },
+          { options: statusOptions, value: statusFilter, onChange: setStatusFilter },
+        ]}
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-[var(--primary)]">{products.length}</p>
-              <p className="text-[var(--muted-foreground)]">Total de Anúncios</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-green-600">{activeProducts}</p>
-              <p className="text-[var(--muted-foreground)]">Anúncios Ativos</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-blue-600">
-                R$ {totalValue.toLocaleString('pt-BR')}
-              </p>
-              <p className="text-[var(--muted-foreground)]">Valor Total</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-purple-600">
-                {products.reduce((acc, p) => acc + p.views, 0)}
-              </p>
-              <p className="text-[var(--muted-foreground)]">Total de Views</p>
-            </CardContent>
-          </Card>
+      {loading ? (
+        <div className="text-center py-12">Carregando...</div>
+      ) : (
+        <div className="bg-white rounded-xl border border-[var(--border)] overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-[var(--gray-50)]">
+              <tr>
+                <th className="px-6 py-3 text-left text-sm font-medium">Produto</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Vendedor</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Categoria</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Preço</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Condição</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Status</th>
+                <th className="px-6 py-3 text-left text-sm font-medium">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProducts.map((product) => (
+                <tr key={product.id} className="border-t border-[var(--border)]">
+                  <td className="px-6 py-4">
+                    <div className="font-medium">{product.nome}</div>
+                    <div className="text-sm text-muted-foreground">{product.descricao?.substring(0, 50)}...</div>
+                  </td>
+                  <td className="px-6 py-4 text-muted-foreground">{product.vendedor || '-'}</td>
+                  <td className="px-6 py-4"><span className="px-2 py-1 bg-gray-100 rounded text-sm">{product.categoria}</span></td>
+                  <td className="px-6 py-4 font-medium">{formatCurrency(product.preco)}</td>
+                  <td className="px-6 py-4">{product.condicao === 'NOVO' ? 'Novo' : 'Usado'}</td>
+                  <td className="px-6 py-4">
+                    <StatusBadge status={product.ativo ? 'ATIVO' : 'INATIVO'} onClick={() => handleToggleStatus(product)} />
+                  </td>
+                  <td className="px-6 py-4">
+                    <button onClick={() => openEditModal(product)} className="text-secondary hover:underline mr-3">Editar</button>
+                    <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:underline">Excluir</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Produtos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4">Produto</th>
-                    <th className="text-left py-3 px-4">Categoria</th>
-                    <th className="text-left py-3 px-4">Vendedor</th>
-                    <th className="text-left py-3 px-4">Preço</th>
-                    <th className="text-left py-3 px-4">Views</th>
-                    <th className="text-left py-3 px-4">Status</th>
-                    <th className="text-left py-3 px-4">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.map((product) => (
-                    <tr key={product.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium">{product.name}</td>
-                      <td className="py-3 px-4">
-                        <span className="px-2 py-1 bg-gray-100 rounded text-xs">{product.category}</span>
-                      </td>
-                      <td className="py-3 px-4">{product.seller}</td>
-                      <td className="py-3 px-4 font-medium">
-                        R$ {product.price.toLocaleString('pt-BR')}
-                      </td>
-                      <td className="py-3 px-4">{product.views}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          product.status === 'ACTIVE'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {product.status === 'ACTIVE' ? 'Ativo' : 'Inativo'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">Ver</Button>
-                          <Button variant="outline" size="sm">
-                            {product.status === 'ACTIVE' ? 'Desativar' : 'Ativar'}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {filteredProducts.length === 0 && !loading && <div className="text-center py-12 text-muted-foreground">Nenhum produto encontrado.</div>}
+
+      <FormModal
+        isOpen={showModal}
+        onClose={() => { setShowModal(false); resetForm(); }}
+        title={editingProduct ? 'Editar Produto' : 'Novo Produto'}
+        onSubmit={handleSubmit}
+        loading={saving}
+        submitLabel={editingProduct ? 'Atualizar' : 'Criar'}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Nome *</label>
+            <Input value={formData.nome} onChange={(e) => setFormData({ ...formData, nome: e.target.value })} required placeholder="Nome do produto" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Descrição</label>
+            <textarea value={formData.descricao} onChange={(e) => setFormData({ ...formData, descricao: e.target.value })} className="w-full px-3 py-2 border rounded-lg" rows={3} placeholder="Descrição do produto" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Preço</label>
+              <Input type="number" step="0.01" value={formData.preco} onChange={(e) => setFormData({ ...formData, preco: parseFloat(e.target.value) || 0 })} />
             </div>
-          </CardContent>
-        </Card>
-    </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Preço Original</label>
+              <Input type="number" step="0.01" value={formData.precoOriginal} onChange={(e) => setFormData({ ...formData, precoOriginal: parseFloat(e.target.value) || 0 })} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Categoria</label>
+              <select value={formData.categoria} onChange={(e) => setFormData({ ...formData, categoria: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                <option value="Eletrônicos">Eletrônicos</option>
+                <option value="Móveis">Móveis</option>
+                <option value="Veículos">Veículos</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Condição</label>
+              <select value={formData.condicao} onChange={(e) => setFormData({ ...formData, condicao: e.target.value })} className="w-full px-3 py-2 border rounded-lg">
+                <option value="NOVO">Novo</option>
+                <option value="USADO">Usado</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Contato</label>
+            <Input value={formData.contatoVendedor} onChange={(e) => setFormData({ ...formData, contatoVendedor: e.target.value })} placeholder="Telefone ou email de contato" />
+          </div>
+          <div className="flex items-center gap-2">
+            <input type="checkbox" id="ativo" checked={formData.ativo} onChange={(e) => setFormData({ ...formData, ativo: e.target.checked })} />
+            <label htmlFor="ativo" className="text-sm">Ativo</label>
+          </div>
+        </div>
+      </FormModal>
+    </AdminLayout>
   );
 }
