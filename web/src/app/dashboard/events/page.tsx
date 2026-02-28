@@ -4,119 +4,63 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { APP_ROUTES } from '@/lib/api';
+import { APP_ROUTES, api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Event {
   id: string;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  endTime: string;
-  location: string;
-  category: string;
-  isOnline: boolean;
-  price: number;
-  spots: number;
-  enrolled: number;
-  image: string;
-  isRegistered: boolean;
+  titulo: string;
+  descricao: string;
+  data: string;
+  horaInicio: string;
+  horaFim: string;
+  local: string;
+  categoria: string;
+  online: boolean;
+  preco: number;
+  vagas: number;
+  imagem?: string;
+  ativo: boolean;
+  inscricoes?: Registration[];
+}
+
+interface Registration {
+  id: string;
+  eventoId: string;
+  usuarioId: string;
+  nome: string;
+  email: string;
+  criadoEm: string;
 }
 
 export default function EventsPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [events, setEvents] = useState<Event[]>([
-    {
-      id: '1',
-      title: 'Assembleia Geral Ordinária 2026',
-      description: 'Apresentação do relatório anual e prestação de contas',
-      date: '2026-03-15',
-      time: '10:00',
-      endTime: '12:00',
-      location: 'Sede da ASCESA',
-      category: 'Assembleia',
-      isOnline: false,
-      price: 0,
-      spots: 100,
-      enrolled: 45,
-      image: '',
-      isRegistered: false,
-    },
-    {
-      id: '2',
-      title: 'Workshop: Educação Financeira',
-      description: 'Aprenda a organizar suas finanças pessoais',
-      date: '2026-03-20',
-      time: '14:00',
-      endTime: '17:00',
-      location: 'Online',
-      category: 'Workshop',
-      isOnline: true,
-      price: 0,
-      spots: 50,
-      enrolled: 32,
-      image: '',
-      isRegistered: false,
-    },
-    {
-      id: '3',
-      title: 'Palestra: Benefícios do Associado',
-      description: 'Conheça todos os benefícios disponíveis para você',
-      date: '2026-03-25',
-      time: '19:00',
-      endTime: '21:00',
-      location: 'Auditório Principal',
-      category: 'Palestra',
-      isOnline: false,
-      price: 0,
-      spots: 80,
-      enrolled: 67,
-      image: '',
-      isRegistered: true,
-    },
-    {
-      id: '4',
-      title: 'Churrasco de Confraternização',
-      description: 'Evento de integração entre associados',
-      date: '2026-04-10',
-      time: '12:00',
-      endTime: '18:00',
-      location: 'Clube dos Associados',
-      category: 'Social',
-      isOnline: false,
-      price: 50,
-      spots: 150,
-      enrolled: 89,
-      image: '',
-      isRegistered: false,
-    },
-    {
-      id: '5',
-      title: 'Webinar: Investimentos 2026',
-      description: 'Tendências de investimentos para o ano',
-      date: '2026-04-05',
-      time: '20:00',
-      endTime: '21:30',
-      location: 'Online',
-      category: 'Webinar',
-      isOnline: true,
-      price: 0,
-      spots: 200,
-      enrolled: 123,
-      image: '',
-      isRegistered: false,
-    },
-  ]);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push(APP_ROUTES.login);
+    } else if (isAuthenticated) {
+      fetchEvents();
     }
   }, [isLoading, isAuthenticated, router]);
+
+  const fetchEvents = async () => {
+    try {
+      const response = await api.get('/events');
+      if (response.success) {
+        setEvents(response.eventos);
+      }
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -129,36 +73,54 @@ export default function EventsPage() {
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
-  const handleRegister = (eventId: string) => {
-    setEvents(events.map(e =>
-      e.id === eventId
-        ? { ...e, isRegistered: true, enrolled: e.enrolled + 1 }
-        : e
-    ));
-    setSelectedEvent(null);
+  const handleRegister = async (eventId: string) => {
+    try {
+      const response = await api.post(`/events/${eventId}/inscrever`);
+      if (response.success) {
+        // Recarregar eventos
+        fetchEvents();
+        setSelectedEvent(null);
+      } else {
+        alert(response.message || 'Erro ao se inscrever');
+      }
+    } catch (error) {
+      console.error('Error registering:', error);
+      alert('Erro ao se inscrever');
+    }
   };
 
-  const handleCancel = (eventId: string) => {
-    setEvents(events.map(e =>
-      e.id === eventId
-        ? { ...e, isRegistered: false, enrolled: e.enrolled - 1 }
-        : e
-    ));
-    setSelectedEvent(null);
+  const handleCancel = async (eventId: string) => {
+    try {
+      const response = await api.delete(`/events/${eventId}/cancelar`);
+      if (response.success) {
+        fetchEvents();
+        setSelectedEvent(null);
+      }
+    } catch (error) {
+      console.error('Error cancelling:', error);
+    }
+  };
+
+  const isRegistered = (event: Event) => {
+    return event.inscricoes?.some(i => i.usuarioId === user?.id) || false;
+  };
+
+  const getRegisteredCount = (event: Event) => {
+    return event.inscricoes?.length || 0;
   };
 
   const filteredEvents = events.filter(e => {
     if (filter === 'all') return true;
-    if (filter === 'registered') return e.isRegistered;
-    if (filter === 'online') return e.isOnline;
-    if (filter === 'free') return e.price === 0;
-    return e.category === filter;
+    if (filter === 'registered') return isRegistered(e);
+    if (filter === 'online') return e.online;
+    if (filter === 'free') return e.preco === 0;
+    return e.categoria === filter;
   });
 
-  const upcomingEvents = events.filter(e => new Date(e.date) >= new Date());
-  const registeredCount = events.filter(e => e.isRegistered).length;
+  const upcomingEvents = events.filter(e => new Date(e.data) >= new Date());
+  const registeredCount = events.filter(e => isRegistered(e)).length;
 
-  if (isLoading || !user) {
+  if (isLoading || loading || !user) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[50vh]">
         <div className="text-center">
@@ -191,7 +153,7 @@ export default function EventsPage() {
         <Card>
           <CardContent className="pt-6 text-center">
             <p className="text-3xl font-bold text-[var(--secondary)]">
-              {events.filter(e => e.isOnline).length}
+              {events.filter(e => e.online).length}
             </p>
             <p className="text-[var(--muted-foreground)]">Eventos Online</p>
           </CardContent>
@@ -204,7 +166,7 @@ export default function EventsPage() {
           { id: 'all', label: 'Todos' },
           { id: 'registered', label: 'Inscritos' },
           { id: 'online', label: 'Online' },
-          { id: 'free', label: 'Gruitos' },
+          { id: 'free', label: 'Gratuitos' },
         ].map((f) => (
           <button
             key={f.id}
@@ -229,42 +191,42 @@ export default function EventsPage() {
             </div>
             <CardHeader>
               <div className="flex justify-between items-start">
-                <span className={`px-2 py-1 rounded text-xs ${getCategoryColor(event.category)}`}>
-                  {event.category}
+                <span className={`px-2 py-1 rounded text-xs ${getCategoryColor(event.categoria)}`}>
+                  {event.categoria}
                 </span>
-                {event.isOnline && (
+                {event.online && (
                   <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
                     Online
                   </span>
                 )}
               </div>
-              <CardTitle className="text-lg mt-2">{event.title}</CardTitle>
-              <CardDescription className="line-clamp-2">{event.description}</CardDescription>
+              <CardTitle className="text-lg mt-2">{event.titulo}</CardTitle>
+              <CardDescription className="line-clamp-2">{event.descricao}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 text-sm mb-4">
                 <div className="flex items-center gap-2">
                   <span>📅</span>
-                  <span>{new Date(event.date).toLocaleDateString('pt-BR')}</span>
+                  <span>{new Date(event.data).toLocaleDateString('pt-BR')}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span>🕐</span>
-                  <span>{event.time} - {event.endTime}</span>
+                  <span>{event.horaInicio} - {event.horaFim}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span>📍</span>
-                  <span>{event.location}</span>
+                  <span>{event.local}</span>
                 </div>
               </div>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-sm text-[var(--muted-foreground)]">
-                  {event.enrolled}/{event.spots} vagas
+                  {getRegisteredCount(event)}/{event.vagas} vagas
                 </span>
                 <span className="font-bold text-[var(--primary)]">
-                  {event.price === 0 ? 'Grátis' : `R$ ${event.price.toFixed(2)}`}
+                  {event.preco === 0 ? 'Grátis' : `R$ ${event.preco.toFixed(2)}`}
                 </span>
               </div>
-              {event.isRegistered ? (
+              {isRegistered(event) ? (
                 <button
                   onClick={() => setSelectedEvent(event)}
                   className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700"
@@ -274,10 +236,10 @@ export default function EventsPage() {
               ) : (
                 <button
                   onClick={() => setSelectedEvent(event)}
-                  disabled={event.enrolled >= event.spots}
+                  disabled={getRegisteredCount(event) >= event.vagas}
                   className="w-full bg-[var(--primary)] text-white py-2 rounded-lg hover:bg-[var(--primary-light)] disabled:bg-gray-300"
                 >
-                  {event.enrolled >= event.spots ? 'Esgotado' : 'Inscrever-se'}
+                  {getRegisteredCount(event) >= event.vagas ? 'Esgotado' : 'Inscrever-se'}
                 </button>
               )}
             </CardContent>
@@ -298,40 +260,40 @@ export default function EventsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-lg m-4 max-h-[90vh] overflow-y-auto">
             <CardHeader>
-              <CardTitle>{selectedEvent.title}</CardTitle>
-              <CardDescription>{selectedEvent.description}</CardDescription>
+              <CardTitle>{selectedEvent.titulo}</CardTitle>
+              <CardDescription>{selectedEvent.descricao}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Data</p>
-                  <p className="font-medium">{new Date(selectedEvent.date).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-medium">{new Date(selectedEvent.data).toLocaleDateString('pt-BR')}</p>
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Horário</p>
-                  <p className="font-medium">{selectedEvent.time} - {selectedEvent.endTime}</p>
+                  <p className="font-medium">{selectedEvent.horaInicio} - {selectedEvent.horaFim}</p>
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Local</p>
-                  <p className="font-medium">{selectedEvent.location}</p>
+                  <p className="font-medium">{selectedEvent.local}</p>
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Categoria</p>
-                  <p className="font-medium">{selectedEvent.category}</p>
+                  <p className="font-medium">{selectedEvent.categoria}</p>
                 </div>
               </div>
               <div>
                 <p className="text-sm text-[var(--muted-foreground)]">Vagas</p>
-                <p className="font-medium">{selectedEvent.enrolled}/{selectedEvent.spots} inscritos</p>
+                <p className="font-medium">{getRegisteredCount(selectedEvent)}/{selectedEvent.vagas} inscritos</p>
               </div>
               <div>
                 <p className="text-sm text-[var(--muted-foreground)]">Valor</p>
                 <p className="font-medium text-xl text-[var(--primary)]">
-                  {selectedEvent.price === 0 ? 'Grátis' : `R$ ${selectedEvent.price.toFixed(2)}`}
+                  {selectedEvent.preco === 0 ? 'Grátis' : `R$ ${selectedEvent.preco.toFixed(2)}`}
                 </p>
               </div>
               <div className="flex gap-2 pt-4">
-                {selectedEvent.isRegistered ? (
+                {isRegistered(selectedEvent) ? (
                   <>
                     <Button
                       className="flex-1"
@@ -352,9 +314,9 @@ export default function EventsPage() {
                     <Button
                       className="flex-1"
                       onClick={() => handleRegister(selectedEvent.id)}
-                      disabled={selectedEvent.enrolled >= selectedEvent.spots}
+                      disabled={getRegisteredCount(selectedEvent) >= selectedEvent.vagas}
                     >
-                      {selectedEvent.enrolled >= selectedEvent.spots ? 'Esgotado' : 'Confirmar Inscrição'}
+                      {getRegisteredCount(selectedEvent) >= selectedEvent.vagas ? 'Esgotado' : 'Confirmar Inscrição'}
                     </Button>
                     <Button
                       variant="outline"

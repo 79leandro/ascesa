@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 
 const initialPosts = [
   { id: 1, title: 'Novos Convênios em 2026', category: 'Notícias', status: 'Publicado', date: '20/02/2026' },
@@ -10,45 +9,11 @@ const initialPosts = [
   { id: 4, title: 'Parceria com Escolas', category: 'Educação', status: 'Publicado', date: '05/02/2026' },
 ];
 
-const SIDEBAR_LINKS = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/benefits', label: 'Convênios', icon: '🎁' },
-  { href: '/admin/blog', label: 'Blog', icon: '📰' },
-  { href: '/admin/associates', label: 'Associados', icon: '👥' },
-  { href: '/admin/documents', label: 'Documentos', icon: '📄' },
-  { href: '/admin/payments', label: 'Pagamentos', icon: '💳' },
-  { href: '/admin/assemblies', label: 'Assembleias', icon: '🏛️' },
-  { href: '/admin/reports', label: 'Relatórios', icon: '📈' },
-  { href: '/admin/partners', label: 'Parceiros', icon: '🤝' },
-  { href: '/admin/settings', label: 'Configurações', icon: '⚙️' },
-  { href: '/dashboard', label: 'Voltar ao Site', icon: '←' },
-];
-
 export default function AdminBlogPage() {
   const [posts] = useState(initialPosts);
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[var(--primary)] text-white p-6">
-        <h2 className="text-xl font-bold mb-8">Painel Admin</h2>
-        <nav className="space-y-2">
-          {SIDEBAR_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`block py-2 px-4 rounded hover:bg-white/10 ${
-                link.href === '/admin/blog' ? 'bg-white/20' : ''
-              }`}
-            >
-              {link.icon} {link.label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 p-8 bg-[var(--gray-50)]">
+    <div>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-[var(--foreground)]">Gerenciar Blog</h1>
           <button className="bg-[var(--primary)] text-white px-4 py-2 rounded-lg hover:bg-[var(--primary-light)]">
@@ -106,7 +71,6 @@ export default function AdminBlogPage() {
             </tbody>
           </table>
         </div>
-      </main>
     </div>
   );
 }

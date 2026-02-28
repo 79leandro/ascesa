@@ -223,3 +223,165 @@ model HistoricoMembership {
 
   @@map("MembershipHistory")
 }
+
+// ============================================
+// MÓDULO: Vitrine Virtual (Produtos)
+// ============================================
+
+model Produto {
+  id              String    @id @default(uuid())
+  nome            String    @map("name")
+  descricao       String?   @map("description")
+  preco           Float     @map("price")
+  precoOriginal   Float?    @map("originalPrice")
+  categoria       String    @map("category")
+  imagens         String[]  @map("images")
+  vendedor        String    @map("seller")
+  contatoVendedor String   @map("sellerContact")
+  condicao        CondicaoProduto @default(USADO) @map("condition")
+  visualizacoes   Int       @default(0) @map("views")
+  ativo           Boolean   @default(true) @map("isActive")
+  usuarioId       String?   @map("userId")
+  criadoEm        DateTime  @default(now()) @map("createdAt")
+  atualizadoEm    DateTime  @updatedAt @map("updatedAt")
+
+  @@map("Product")
+}
+
+enum CondicaoProduto {
+  NOVO   @map("NEW")
+  USADO  @map("USED")
+  REFORMADO @map("REFURBISHED")
+}
+
+// ============================================
+// MÓDULO: Fórum (Tópicos e Respostas)
+// ============================================
+
+model Topico {
+  id          String    @id @default(uuid())
+  titulo       String    @map("title")
+  conteudo    String    @map("content")
+  categoria   String    @map("category")
+  autor       String    @map("author")
+  usuarioId   String?   @map("userId")
+  fixado      Boolean   @default(false) @map("isPinned")
+  fechado     Boolean   @default(false) @map("isLocked")
+  visualizacoes Int    @default(0) @map("views")
+  respostas    Resposta[]
+  criadoEm    DateTime  @default(now()) @map("createdAt")
+  atualizadoEm DateTime  @updatedAt @map("updatedAt")
+
+  @@map("Topic")
+}
+
+model Resposta {
+  id          String    @id @default(uuid())
+  topicoId    String    @map("topicId")
+  topico      Topico    @relation(fields: [topicoId], references: [id], onDelete: Cascade)
+  conteudo    String    @map("content")
+  autor       String    @map("author")
+  usuarioId   String?   @map("userId")
+  criadoEm    DateTime  @default(now()) @map("createdAt")
+
+  @@map("Reply")
+}
+
+// ============================================
+// MÓDULO: Eventos
+// ============================================
+
+model Evento {
+  id              String    @id @default(uuid())
+  titulo          String    @map("title")
+  descricao       String?   @map("description")
+  data            DateTime  @map("date")
+  horaInicio      String    @map("startTime")
+  horaFim         String    @map("endTime")
+  local           String    @map("location")
+  categoria       String    @map("category")
+  online           Boolean  @default(false) @map("isOnline")
+  preco           Float     @default(0) @map("price")
+  vagas           Int       @default(0) @map("spots")
+  imagem          String?   @map("image")
+  ativo           Boolean   @default(true) @map("isActive")
+  inscricoes      InscricaoEvento[]
+  criadoEm        DateTime  @default(now()) @map("createdAt")
+  atualizadoEm    DateTime  @updatedAt @map("updatedAt")
+
+  @@map("Event")
+}
+
+model InscricaoEvento {
+  id          String    @id @default(uuid())
+  eventoId    String    @map("eventId")
+  evento      Evento    @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  usuarioId   String    @map("userId")
+  nome        String    @map("name")
+  email       String    @map("email")
+  criadoEm    DateTime  @default(now()) @map("createdAt")
+
+  @@unique([eventoId, usuarioId])
+  @@map("EventRegistration")
+}
+
+// ============================================
+// MÓDULO: Assembleias e Votações
+// ============================================
+
+model Assembleia {
+  id          String    @id @default(uuid())
+  titulo      String    @map("title")
+  tipo        TipoAssembleia @map("type")
+  data        DateTime  @map("date")
+  hora        String    @map("time")
+  local       String    @map("location")
+  descricao   String?   @map("description")
+  status      StatusAssembleia @default(AGENDADA) @map("status")
+  totalVotos  Int       @default(0) @map("totalVotes")
+  candidatos  Candidato[]
+  votos       Voto[]
+  criadoEm    DateTime  @default(now()) @map("createdAt")
+  atualizadoEm DateTime  @updatedAt @map("updatedAt")
+
+  @@map("Assembly")
+}
+
+enum TipoAssembleia {
+  ORDINARIA   @map("ORDINARY")
+  EXTRAORDINARIA @map("EXTRAORDINARY")
+}
+
+enum StatusAssembleia {
+  AGENDADA    @map("SCHEDULED")
+  EM_ANDAMENTO @map("IN_PROGRESS")
+  ENCERRADA   @map("COMPLETED")
+  CANCELADA   @map("CANCELLED")
+}
+
+model Candidato {
+  id          String    @id @default(uuid())
+  assembleiaId String   @map("assemblyId")
+  assembleia  Assembleia @relation(fields: [assembleiaId], references: [id], onDelete: Cascade)
+  nome        String    @map("name")
+  cargo       String    @map("role")
+  foto        String?   @map("photo")
+  votos       Int       @default(0) @map("votes")
+  votosList   Voto[]    @relation("CandidateVotes")
+  criadoEm    DateTime  @default(now()) @map("createdAt")
+
+  @@map("Candidate")
+}
+
+model Voto {
+  id          String    @id @default(uuid())
+  assembleiaId String   @map("assemblyId")
+  assembleia  Assembleia @relation(fields: [assembleiaId], references: [id], onDelete: Cascade)
+  candidatoId String   @map("candidateId")
+  candidato   Candidato @relation("CandidateVotes", fields: [candidatoId], references: [id], onDelete: Cascade)
+  usuarioId   String    @map("userId")
+  criadoEm    DateTime  @default(now()) @map("createdAt")
+
+  @@unique([assembleiaId, usuarioId])
+  @@map("Vote")
+}

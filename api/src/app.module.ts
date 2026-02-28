@@ -10,6 +10,10 @@ import { DocumentsModule } from './documents/documents.module';
 import { UsersModule } from './users/users.module';
 import { BenefitsModule } from './benefits/benefits.module';
 import { PartnersModule } from './partners/partners.module';
+import { ShowcaseModule } from './showcase/showcase.module';
+import { ForumModule } from './forum/forum.module';
+import { EventsModule } from './events/events.module';
+import { AssembliesModule } from './assemblies/assemblies.module';
 import { SeedService } from './seed.service';
 
 @Module({
@@ -22,6 +26,10 @@ import { SeedService } from './seed.service';
     UsersModule,
     BenefitsModule,
     PartnersModule,
+    ShowcaseModule,
+    ForumModule,
+    EventsModule,
+    AssembliesModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService, SeedService],

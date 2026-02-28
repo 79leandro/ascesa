@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -93,25 +92,7 @@ export default function AdminShowcasePage() {
   const activeProducts = products.filter(p => p.status === 'ACTIVE').length;
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-64 bg-[var(--primary)] text-white p-6">
-        <h2 className="text-xl font-bold mb-8">Painel Admin</h2>
-        <nav className="space-y-2">
-          {SIDEBAR_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`block py-2 px-4 rounded hover:bg-white/10 ${
-                link.href === '/admin/showcase' ? 'bg-white/20' : ''
-              }`}
-            >
-              {link.icon} {link.label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      <main className="flex-1 p-8 bg-[var(--gray-50)]">
+    <div>
         <h1 className="text-3xl font-bold text-[var(--foreground)] mb-8">Gerenciar Vitrine Virtual</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -199,7 +180,6 @@ export default function AdminShowcasePage() {
             </div>
           </CardContent>
         </Card>
-      </main>
     </div>
   );
 }

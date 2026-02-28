@@ -3,89 +3,38 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { APP_ROUTES } from '@/lib/api';
+import { APP_ROUTES, api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 
 interface Topic {
   id: string;
-  title: string;
-  content: string;
-  author: string;
-  category: string;
-  replies: number;
-  views: number;
-  lastReply: string;
-  isPinned: boolean;
-  isLocked: boolean;
-  createdAt: string;
+  titulo: string;
+  conteudo: string;
+  autor: string;
+  categoria: string;
+  fixado: boolean;
+  fechado: boolean;
+  visualizacoes: number;
+  criadoEm: string;
+  atualizadoEm: string;
+  respostas?: Reply[];
+  _count?: { respostas: number };
 }
 
 interface Reply {
   id: string;
-  topicId: string;
-  content: string;
-  author: string;
-  createdAt: string;
-  isAdmin: boolean;
+  topicoId: string;
+  conteudo: string;
+  autor: string;
+  usuarioId?: string;
+  criadoEm: string;
 }
 
 export default function ForumPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [topics, setTopics] = useState<Topic[]>([
-    {
-      id: '1',
-      title: 'Dúvidas sobre benefícios',
-      content: 'Alguém sabe como utilizar os benefícios de farmácia?',
-      author: 'João Silva',
-      category: 'Benefícios',
-      replies: 12,
-      views: 234,
-      lastReply: '2026-02-25',
-      isPinned: true,
-      isLocked: false,
-      createdAt: '2026-02-20',
-    },
-    {
-      id: '2',
-      title: 'Reunião de associado - Fevereiro',
-      content: 'Vamos discutir as próximas ações da associação',
-      author: 'Maria Santos',
-      category: 'Eventos',
-      replies: 8,
-      views: 156,
-      lastReply: '2026-02-24',
-      isPinned: false,
-      isLocked: false,
-      createdAt: '2026-02-22',
-    },
-    {
-      id: '3',
-      title: 'Dicas de economia',
-      content: 'Compartilhe suas dicas de economia aqui',
-      author: 'Pedro Oliveira',
-      category: 'Finanças',
-      replies: 25,
-      views: 456,
-      lastReply: '2026-02-25',
-      isPinned: false,
-      isLocked: false,
-      createdAt: '2026-02-15',
-    },
-    {
-      id: '4',
-      title: 'Novo convênio de saúde',
-      content: 'O que acham do novo convênio?',
-      author: 'Ana Costa',
-      category: 'Benefícios',
-      replies: 0,
-      views: 89,
-      lastReply: '2026-02-23',
-      isPinned: false,
-      isLocked: false,
-      createdAt: '2026-02-23',
-    },
-  ]);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [replies, setReplies] = useState<Reply[]>([]);
   const [newReply, setNewReply] = useState('');
@@ -97,70 +46,104 @@ export default function ForumPage() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push(APP_ROUTES.login);
+    } else if (isAuthenticated) {
+      fetchTopics();
     }
   }, [isLoading, isAuthenticated, router]);
 
-  const categories = ['Geral', 'Benefícios', 'Finanças', 'Eventos', 'Dúvidas', 'Sugestões'];
-
-  const handleCreateTopic = () => {
-    if (!newTopicTitle.trim() || !newTopicContent.trim()) return;
-
-    const topic: Topic = {
-      id: Date.now().toString(),
-      title: newTopicTitle,
-      content: newTopicContent,
-      author: user?.name || 'Você',
-      category: newTopicCategory,
-      replies: 0,
-      views: 0,
-      lastReply: new Date().toISOString().split('T')[0],
-      isPinned: false,
-      isLocked: false,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-
-    setTopics([topic, ...topics]);
-    setShowNewTopic(false);
-    setNewTopicTitle('');
-    setNewTopicContent('');
+  const fetchTopics = async () => {
+    try {
+      const response = await api.get('/forum');
+      if (response.success) {
+        setTopics(response.topicos);
+      }
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSendReply = () => {
+  const categories = ['Geral', 'Benefícios', 'Finanças', 'Eventos', 'Dúvidas', 'Sugestões'];
+
+  const handleCreateTopic = async () => {
+    if (!newTopicTitle.trim() || !newTopicContent.trim()) return;
+
+    try {
+      const response = await api.post('/forum', {
+        titulo: newTopicTitle,
+        conteudo: newTopicContent,
+        categoria: newTopicCategory,
+      });
+      if (response.success) {
+        setTopics([response.topico, ...topics]);
+        setShowNewTopic(false);
+        setNewTopicTitle('');
+        setNewTopicContent('');
+      }
+    } catch (error) {
+      console.error('Error creating topic:', error);
+    }
+  };
+
+  const handleSendReply = async () => {
     if (!newReply.trim() || !selectedTopic) return;
 
-    const reply: Reply = {
-      id: Date.now().toString(),
-      topicId: selectedTopic.id,
-      content: newReply,
-      author: user?.name || 'Você',
-      createdAt: new Date().toISOString(),
-      isAdmin: user?.role === 'ADMIN' || user?.role === 'DIRECTOR',
-    };
+    try {
+      const response = await api.post(`/forum/${selectedTopic.id}/respostas`, {
+        conteudo: newReply,
+      });
+      if (response.success) {
+        setReplies([...replies, response.resposta]);
+        setTopics(topics.map(t =>
+          t.id === selectedTopic.id
+            ? { ...t, _count: { respostas: (t._count?.respostas || 0) + 1 } }
+            : t
+        ));
+        setNewReply('');
+        // Recarregar tópico completo
+        fetchTopicDetail(selectedTopic.id);
+      }
+    } catch (error) {
+      console.error('Error creating reply:', error);
+    }
+  };
 
-    setReplies([...replies, reply]);
-    setTopics(topics.map(t =>
-      t.id === selectedTopic.id
-        ? { ...t, replies: t.replies + 1, lastReply: new Date().toISOString().split('T')[0] }
-        : t
-    ));
-    setNewReply('');
+  const fetchTopicDetail = async (topicId: string) => {
+    try {
+      const response = await api.get(`/forum/${topicId}`);
+      if (response.success) {
+        setSelectedTopic(response.topico);
+        setReplies(response.topico.respostas || []);
+      }
+    } catch (error) {
+      console.error('Error fetching topic detail:', error);
+    }
   };
 
   const selectTopic = (topic: Topic) => {
-    setSelectedTopic(topic);
-    setReplies([
-      {
-        id: '1',
-        topicId: topic.id,
-        content: 'Olá! Fico feliz que tenha perguntado. Posso ajudar com isso.',
-        author: 'Maria Santos',
-        createdAt: '2026-02-21T10:00:00Z',
-        isAdmin: false,
-      },
-    ]);
+    fetchTopicDetail(topic.id);
   };
 
-  if (isLoading || !user) {
+  const handleDeleteTopic = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir este tópico?')) return;
+
+    try {
+      const response = await api.delete(`/forum/${id}`);
+      if (response.success) {
+        setTopics(topics.filter(t => t.id !== id));
+        if (selectedTopic?.id === id) {
+          setSelectedTopic(null);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting topic:', error);
+    }
+  };
+
+  const isAdmin = user?.role === 'ADMIN' || user?.role === 'DIRECTOR';
+
+  if (isLoading || loading || !user) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[50vh]">
         <div className="text-center">
@@ -186,18 +169,6 @@ export default function ForumPage() {
         </button>
       </div>
 
-      {/* Categories */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {categories.map((category) => (
-          <button
-            key={category}
-            className="px-3 py-1 bg-[var(--gray-100)] rounded-full text-sm hover:bg-[var(--gray-200)]"
-          >
-            {category}
-          </button>
-        ))}
-      </div>
-
       {/* Topics List */}
       {!selectedTopic && !showNewTopic && (
         <div className="space-y-4">
@@ -205,45 +176,70 @@ export default function ForumPage() {
             <Card
               key={topic.id}
               className={`hover:shadow-lg transition-shadow cursor-pointer ${
-                topic.isPinned ? 'border-l-4 border-l-[var(--primary)]' : ''
+                topic.fixado ? 'border-l-4 border-l-[var(--primary)]' : ''
               }`}
-              onClick={() => !topic.isLocked && selectTopic(topic)}
+              onClick={() => !topic.fechado && selectTopic(topic)}
             >
               <CardContent className="p-6">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      {topic.isPinned && (
+                      {topic.fixado && (
                         <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
                           📌 Fixado
                         </span>
                       )}
-                      {topic.isLocked && (
+                      {topic.fechado && (
                         <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">
                           🔒 Fechado
                         </span>
                       )}
                       <span className="bg-[var(--gray-100)] text-[var(--foreground)] text-xs px-2 py-1 rounded">
-                        {topic.category}
+                        {topic.categoria}
                       </span>
                     </div>
-                    <h3 className="text-lg font-semibold text-[var(--foreground)]">{topic.title}</h3>
+                    <h3 className="text-lg font-semibold text-[var(--foreground)]">{topic.titulo}</h3>
                     <p className="text-[var(--muted-foreground)] text-sm mt-1 line-clamp-2">
-                      {topic.content}
+                      {topic.conteudo}
                     </p>
                   </div>
                   <div className="text-right text-sm text-[var(--muted-foreground)]">
-                    <p>{topic.replies} respostas</p>
-                    <p>{topic.views} visualizações</p>
-                    <p className="mt-2">{topic.lastReply}</p>
+                    <p>{topic._count?.respostas || 0} respostas</p>
+                    <p>{topic.visualizacoes} visualizações</p>
+                    <p className="mt-2">{new Date(topic.criadoEm).toLocaleDateString('pt-BR')}</p>
                   </div>
                 </div>
                 <div className="mt-4 text-sm text-[var(--muted-foreground)]">
-                  Por <span className="font-medium">{topic.author}</span>
+                  Por <span className="font-medium">{topic.autor}</span>
+                  {(topic.autor === user.name || isAdmin) && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTopic(topic.id);
+                      }}
+                      className="ml-4 text-red-500 hover:text-red-700"
+                    >
+                      Excluir
+                    </button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
+
+          {topics.length === 0 && (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <p className="text-[var(--muted-foreground)]">Nenhum tópico encontrado.</p>
+                <button
+                  onClick={() => setShowNewTopic(true)}
+                  className="mt-4 text-[var(--primary)] hover:underline"
+                >
+                  Criar primeiro tópico
+                </button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
@@ -260,16 +256,16 @@ export default function ForumPage() {
             <CardHeader>
               <div className="flex items-center gap-2 mb-2">
                 <span className="bg-[var(--gray-100)] text-[var(--foreground)] text-xs px-2 py-1 rounded">
-                  {selectedTopic.category}
+                  {selectedTopic.categoria}
                 </span>
               </div>
-              <CardTitle>{selectedTopic.title}</CardTitle>
+              <CardTitle>{selectedTopic.titulo}</CardTitle>
               <p className="text-sm text-[var(--muted-foreground)]">
-                Por {selectedTopic.author} • {selectedTopic.createdAt}
+                Por {selectedTopic.autor} • {new Date(selectedTopic.criadoEm).toLocaleDateString('pt-BR')}
               </p>
             </CardHeader>
             <CardContent>
-              <p>{selectedTopic.content}</p>
+              <p>{selectedTopic.conteudo}</p>
             </CardContent>
           </Card>
 
@@ -281,26 +277,21 @@ export default function ForumPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">
-                        {reply.author}
-                        {reply.isAdmin && (
-                          <span className="ml-2 bg-[var(--primary)] text-white text-xs px-2 py-1 rounded">
-                            Admin
-                          </span>
-                        )}
+                        {reply.autor}
                       </p>
                       <p className="text-sm text-[var(--muted-foreground)]">
-                        {new Date(reply.createdAt).toLocaleString('pt-BR')}
+                        {new Date(reply.criadoEm).toLocaleString('pt-BR')}
                       </p>
                     </div>
                   </div>
-                  <p className="mt-3">{reply.content}</p>
+                  <p className="mt-3">{reply.conteudo}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
 
           {/* New Reply */}
-          {!selectedTopic.isLocked && (
+          {!selectedTopic.fechado && (
             <div className="flex gap-4">
               <textarea
                 className="flex-1 px-4 py-2 border border-[var(--border)] rounded-lg"

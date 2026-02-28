@@ -1,153 +1,83 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
-const SIDEBAR_LINKS = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/benefits', label: 'Convênios', icon: '🎁' },
-  { href: '/admin/blog', label: 'Blog', icon: '📰' },
-  { href: '/admin/associates', label: 'Associados', icon: '👥' },
-  { href: '/admin/documents', label: 'Documentos', icon: '📄' },
-  { href: '/admin/payments', label: 'Pagamentos', icon: '💳' },
-  { href: '/admin/assemblies', label: 'Assembleias', icon: '🏛️' },
-  { href: '/admin/reports', label: 'Relatórios', icon: '📈' },
-  { href: '/admin/partners', label: 'Parceiros', icon: '🤝' },
-  { href: '/admin/settings', label: 'Configurações', icon: '⚙️' },
-  { href: '/dashboard', label: 'Voltar ao Site', icon: '←' },
-];
+import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { api } from '@/lib/api';
 
 interface Assembly {
   id: string;
-  title: string;
-  type: 'ORDINARY' | 'EXTRAORDINARY';
-  date: string;
-  time: string;
-  location: string;
-  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  description: string;
-  totalVotes: number;
+  titulo: string;
+  tipo: string;
+  data: string;
+  hora: string;
+  local: string;
+  descricao: string;
+  status: string;
+  totalVotos: number;
+  candidatos: Candidate[];
 }
 
 interface Candidate {
   id: string;
-  assemblyId: string;
-  name: string;
-  role: string;
-  votes: number;
-  photo: string;
+  assembleiaId: string;
+  nome: string;
+  cargo: string;
+  foto: string | null;
+  votos: number;
 }
 
 export default function AdminAssembliesPage() {
   const router = useRouter();
-  const [assemblies, setAssemblies] = useState<Assembly[]>([
-    {
-      id: '1',
-      title: 'Assembleia Geral Ordinária 2026',
-      type: 'ORDINARY',
-      date: '2026-03-15',
-      time: '10:00',
-      location: 'Sede da ASCESA',
-      status: 'SCHEDULED',
-      description: 'Apresentação do relatório anual e eleição da diretoria',
-      totalVotes: 0,
-    },
-    {
-      id: '2',
-      title: 'Assembleia Extraordinária - Reforma Estatutária',
-      type: 'EXTRAORDINARY',
-      date: '2026-02-20',
-      time: '14:00',
-      location: 'Sede da ASCESA',
-      status: 'COMPLETED',
-      description: 'Votação das alterações estatutárias',
-      totalVotes: 156,
-    },
-    {
-      id: '3',
-      title: 'Assembleia Geral Ordinária 2025',
-      type: 'ORDINARY',
-      date: '2025-03-15',
-      time: '10:00',
-      location: 'Sede da ASCESA',
-      status: 'COMPLETED',
-      description: 'Apresentação do relatório anual e prestação de contas',
-      totalVotes: 234,
-    },
-  ]);
-  const [candidates, setCandidates] = useState<Candidate[]>([
-    {
-      id: '1',
-      assemblyId: '1',
-      name: 'José Silva',
-      role: 'Presidente',
-      votes: 0,
-      photo: '',
-    },
-    {
-      id: '2',
-      assemblyId: '1',
-      name: 'Maria Santos',
-      role: 'Vice-Presidente',
-      votes: 0,
-      photo: '',
-    },
-    {
-      id: '3',
-      assemblyId: '1',
-      name: 'Pedro Oliveira',
-      role: 'Diretor Financeiro',
-      votes: 0,
-      photo: '',
-    },
-    {
-      id: '4',
-      assemblyId: '2',
-      name: 'Sim - Aprovar',
-      role: 'Voto',
-      votes: 142,
-      photo: '',
-    },
-    {
-      id: '5',
-      assemblyId: '2',
-      name: 'Não - Reprovar',
-      role: 'Voto',
-      votes: 14,
-      photo: '',
-    },
-  ]);
+  const { user, mounted: authLoading } = useAdminAuth();
+  const [assemblies, setAssemblies] = useState<Assembly[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedAssembly, setSelectedAssembly] = useState<Assembly | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showCandidateModal, setShowCandidateModal] = useState(false);
+  const [newAssembly, setNewAssembly] = useState({
+    titulo: '',
+    tipo: 'ORDINARIA',
+    data: '',
+    hora: '',
+    local: '',
+    descricao: '',
+  });
+  const [newCandidate, setNewCandidate] = useState({
+    nome: '',
+    cargo: '',
+    foto: '',
+  });
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    if (!authLoading && user) {
+      fetchAssemblies();
+    }
+  }, [authLoading, user]);
 
-  const checkAuth = () => {
-    const user = localStorage.getItem('user');
-    if (user) {
-      const userData = JSON.parse(user);
-      if (userData.role !== 'ADMIN' && userData.role !== 'DIRECTOR') {
-        router.push('/dashboard');
+  const fetchAssemblies = async () => {
+    try {
+      const response = await api.get('/assemblies');
+      if (response.success) {
+        setAssemblies(response.assembleias);
       }
-    } else {
-      router.push('/login');
+    } catch (error) {
+      console.error('Error fetching assemblies:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'SCHEDULED':
+      case 'AGENDADA':
         return 'bg-blue-100 text-blue-800';
-      case 'IN_PROGRESS':
+      case 'EM_ANDAMENTO':
         return 'bg-green-100 text-green-800';
-      case 'COMPLETED':
+      case 'ENCERRADA':
         return 'bg-gray-100 text-gray-800';
-      case 'CANCELLED':
+      case 'CANCELADA':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -156,13 +86,13 @@ export default function AdminAssembliesPage() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'SCHEDULED':
+      case 'AGENDADA':
         return 'Agendada';
-      case 'IN_PROGRESS':
+      case 'EM_ANDAMENTO':
         return 'Em Andamento';
-      case 'COMPLETED':
+      case 'ENCERRADA':
         return 'Encerrada';
-      case 'CANCELLED':
+      case 'CANCELADA':
         return 'Cancelada';
       default:
         return status;
@@ -170,33 +100,128 @@ export default function AdminAssembliesPage() {
   };
 
   const getTypeLabel = (type: string) => {
-    return type === 'ORDINARY' ? 'Ordinária' : 'Extraordinária';
+    return type === 'ORDINARIA' ? 'Ordinária' : 'Extraordinária';
   };
 
-  const scheduledCount = assemblies.filter(a => a.status === 'SCHEDULED').length;
-  const completedCount = assemblies.filter(a => a.status === 'COMPLETED').length;
+  const scheduledCount = assemblies.filter(a => a.status === 'AGENDADA').length;
+  const completedCount = assemblies.filter(a => a.status === 'ENCERRADA').length;
 
-  const filteredCandidates = selectedAssembly
-    ? candidates.filter(c => c.assemblyId === selectedAssembly.id)
-    : [];
+  const handleCreateAssembly = async () => {
+    if (!newAssembly.titulo || !newAssembly.data) return;
+
+    try {
+      const response = await api.post('/assemblies', newAssembly);
+      if (response.success) {
+        setAssemblies([response.assembleia, ...assemblies]);
+        setShowModal(false);
+        setNewAssembly({
+          titulo: '',
+          tipo: 'ORDINARIA',
+          data: '',
+          hora: '',
+          local: '',
+          descricao: '',
+        });
+      }
+    } catch (error) {
+      console.error('Error creating assembly:', error);
+    }
+  };
+
+  const handleAddCandidate = async () => {
+    if (!selectedAssembly || !newCandidate.nome) return;
+
+    try {
+      const response = await api.post(`/assemblies/${selectedAssembly.id}/candidatos`, newCandidate);
+      if (response.success) {
+        setSelectedAssembly({
+          ...selectedAssembly,
+          candidatos: [...selectedAssembly.candidatos, response.candidato],
+        });
+        setAssemblies(assemblies.map(a =>
+          a.id === selectedAssembly.id
+            ? { ...a, candidatos: [...a.candidatos, response.candidato] }
+            : a
+        ));
+        setShowCandidateModal(false);
+        setNewCandidate({ nome: '', cargo: '', foto: '' });
+      }
+    } catch (error) {
+      console.error('Error adding candidate:', error);
+    }
+  };
+
+  const handleStartVoting = async (id: string) => {
+    try {
+      const response = await api.patch(`/assemblies/${id}/iniciar`);
+      if (response.success) {
+        fetchAssemblies();
+        if (selectedAssembly?.id === id) {
+          setSelectedAssembly({ ...selectedAssembly, status: 'EM_ANDAMENTO' });
+        }
+      }
+    } catch (error) {
+      console.error('Error starting voting:', error);
+    }
+  };
+
+  const handleEndVoting = async (id: string) => {
+    try {
+      const response = await api.patch(`/assemblies/${id}/encerrar`);
+      if (response.success) {
+        fetchAssemblies();
+        if (selectedAssembly?.id === id) {
+          setSelectedAssembly({ ...selectedAssembly, status: 'ENCERRADA' });
+        }
+      }
+    } catch (error) {
+      console.error('Error ending voting:', error);
+    }
+  };
+
+  const handleDeleteCandidate = async (candidateId: string) => {
+    if (!selectedAssembly) return;
+    if (!confirm('Tem certeza que deseja remover este candidato?')) return;
+
+    try {
+      const response = await api.delete(`/assemblies/candidatos/${candidateId}`);
+      if (response.success) {
+        setSelectedAssembly({
+          ...selectedAssembly,
+          candidatos: selectedAssembly.candidatos.filter(c => c.id !== candidateId),
+        });
+        setAssemblies(assemblies.map(a =>
+          a.id === selectedAssembly.id
+            ? { ...a, candidatos: a.candidatos.filter(c => c.id !== candidateId) }
+            : a
+        ));
+      }
+    } catch (error) {
+      console.error('Error removing candidate:', error);
+    }
+  };
+
+  if (authLoading || loading || !user) {
+    return (
+      <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--primary)] mx-auto mb-4"></div>
+          <p className="text-[var(--muted-foreground)]">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[var(--primary)] text-white p-6">
-        <h2 className="text-xl font-bold mb-8">Painel Admin</h2>
-        <nav className="space-y-2">
-          {SIDEBAR_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`block py-2 px-4 rounded hover:bg-white/10 ${
-                link.href === '/admin/assemblies' ? 'bg-white/20' : ''
-              }`}
-            >
-              {link.icon} {link.label}
-            </Link>
-          ))}
+    <div>
+            🏛️ Assembleias
+          </Link>
+          <Link href="/admin/partners" className="block py-2 px-4 rounded hover:bg-white/10">
+            🤝 Parceiros
+          </Link>
+          <Link href="/dashboard" className="block py-2 px-4 rounded hover:bg-white/10 mt-8">
+            ← Voltar ao Site
+          </Link>
         </nav>
       </aside>
 
@@ -232,7 +257,7 @@ export default function AdminAssembliesPage() {
           <Card>
             <CardContent className="pt-4">
               <p className="text-2xl font-bold">
-                {assemblies.reduce((acc, a) => acc + a.totalVotes, 0)}
+                {assemblies.reduce((acc, a) => acc + a.totalVotos, 0)}
               </p>
               <p className="text-sm text-[var(--muted-foreground)]">Total de Votos</p>
             </CardContent>
@@ -246,9 +271,9 @@ export default function AdminAssembliesPage() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">{assembly.title}</CardTitle>
+                    <CardTitle className="text-lg">{assembly.titulo}</CardTitle>
                     <p className="text-sm text-[var(--muted-foreground)] mt-1">
-                      {getTypeLabel(assembly.type)}
+                      {getTypeLabel(assembly.tipo)}
                     </p>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(assembly.status)}`}>
@@ -259,18 +284,18 @@ export default function AdminAssembliesPage() {
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
                   <span>📅</span>
-                  <span>{new Date(assembly.date).toLocaleDateString('pt-BR')}</span>
+                  <span>{new Date(assembly.data).toLocaleDateString('pt-BR')}</span>
                   <span>às</span>
-                  <span>{assembly.time}</span>
+                  <span>{assembly.hora}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <span>📍</span>
-                  <span>{assembly.location}</span>
+                  <span>{assembly.local}</span>
                 </div>
-                <p className="text-sm text-[var(--muted-foreground)]">{assembly.description}</p>
+                <p className="text-sm text-[var(--muted-foreground)]">{assembly.descricao}</p>
                 <div className="flex items-center justify-between pt-2">
                   <span className="text-sm font-medium">
-                    {assembly.totalVotes > 0 ? `${assembly.totalVotes} votos` : 'Votação não iniciada'}
+                    {assembly.totalVotos > 0 ? `${assembly.totalVotos} votos` : `${assembly.candidatos?.length || 0} candidatos`}
                   </span>
                   <Button
                     variant="outline"
@@ -304,25 +329,25 @@ export default function AdminAssembliesPage() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Título</p>
-                  <p className="font-medium">{selectedAssembly.title}</p>
+                  <p className="font-medium">{selectedAssembly.titulo}</p>
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Tipo</p>
-                  <p className="font-medium">{getTypeLabel(selectedAssembly.type)}</p>
+                  <p className="font-medium">{getTypeLabel(selectedAssembly.tipo)}</p>
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Data e Hora</p>
                   <p className="font-medium">
-                    {new Date(selectedAssembly.date).toLocaleDateString('pt-BR')} às {selectedAssembly.time}
+                    {new Date(selectedAssembly.data).toLocaleDateString('pt-BR')} às {selectedAssembly.hora}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Local</p>
-                  <p className="font-medium">{selectedAssembly.location}</p>
+                  <p className="font-medium">{selectedAssembly.local}</p>
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Descrição</p>
-                  <p className="font-medium">{selectedAssembly.description}</p>
+                  <p className="font-medium">{selectedAssembly.descricao}</p>
                 </div>
                 <div>
                   <p className="text-sm text-[var(--muted-foreground)]">Status</p>
@@ -331,35 +356,53 @@ export default function AdminAssembliesPage() {
                   </span>
                 </div>
 
-                {/* Candidates/Options */}
-                {filteredCandidates.length > 0 && (
-                  <div className="border-t pt-4 mt-4">
-                    <p className="font-medium mb-3">Candidatos/Opções de Voto</p>
-                    <div className="space-y-2">
-                      {filteredCandidates.map((candidate) => (
-                        <div key={candidate.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <div>
-                            <p className="font-medium">{candidate.name}</p>
-                            <p className="text-sm text-[var(--muted-foreground)]">{candidate.role}</p>
-                          </div>
+                {/* Candidates */}
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <p className="font-medium">Candidatos/Opções de Voto</p>
+                    {selectedAssembly.status === 'AGENDADA' && (
+                      <Button size="sm" onClick={() => setShowCandidateModal(true)}>
+                        + Adicionar
+                      </Button>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {selectedAssembly.candidatos?.map((candidate) => (
+                      <div key={candidate.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <div>
+                          <p className="font-medium">{candidate.nome}</p>
+                          <p className="text-sm text-[var(--muted-foreground)]">{candidate.cargo}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
                           <div className="text-right">
-                            <p className="font-bold text-lg">{candidate.votes}</p>
+                            <p className="font-bold text-lg">{candidate.votos}</p>
                             <p className="text-xs text-[var(--muted-foreground)]">votos</p>
                           </div>
+                          {selectedAssembly.status === 'AGENDADA' && (
+                            <button
+                              onClick={() => handleDeleteCandidate(candidate.id)}
+                              className="text-red-500 hover:text-red-700 ml-2"
+                            >
+                              ✕
+                            </button>
+                          )}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
+                    {(!selectedAssembly.candidatos || selectedAssembly.candidatos.length === 0) && (
+                      <p className="text-sm text-[var(--muted-foreground)]">Nenhum candidato cadastrado</p>
+                    )}
                   </div>
-                )}
+                </div>
 
                 <div className="flex gap-2 pt-4">
-                  {selectedAssembly.status === 'SCHEDULED' && (
-                    <Button className="flex-1 bg-green-600 hover:bg-green-700">
+                  {selectedAssembly.status === 'AGENDADA' && (
+                    <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleStartVoting(selectedAssembly.id)}>
                       Iniciar Votação
                     </Button>
                   )}
-                  {selectedAssembly.status === 'IN_PROGRESS' && (
-                    <Button className="flex-1 bg-red-600 hover:bg-red-700">
+                  {selectedAssembly.status === 'EM_ANDAMENTO' && (
+                    <Button className="flex-1 bg-red-600 hover:bg-red-700" onClick={() => handleEndVoting(selectedAssembly.id)}>
                       Encerrar Votação
                     </Button>
                   )}
@@ -390,13 +433,19 @@ export default function AdminAssembliesPage() {
                     type="text"
                     className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
                     placeholder="Título da assembleia"
+                    value={newAssembly.titulo}
+                    onChange={(e) => setNewAssembly({ ...newAssembly, titulo: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Tipo</label>
-                  <select className="w-full px-3 py-2 border border-[var(--border)] rounded-lg">
-                    <option value="ORDINARY">Ordinária</option>
-                    <option value="EXTRAORDINARY">Extraordinária</option>
+                  <select
+                    className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
+                    value={newAssembly.tipo}
+                    onChange={(e) => setNewAssembly({ ...newAssembly, tipo: e.target.value })}
+                  >
+                    <option value="ORDINARIA">Ordinária</option>
+                    <option value="EXTRAORDINARIA">Extraordinária</option>
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -405,6 +454,8 @@ export default function AdminAssembliesPage() {
                     <input
                       type="date"
                       className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
+                      value={newAssembly.data}
+                      onChange={(e) => setNewAssembly({ ...newAssembly, data: e.target.value })}
                     />
                   </div>
                   <div>
@@ -412,6 +463,8 @@ export default function AdminAssembliesPage() {
                     <input
                       type="time"
                       className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
+                      value={newAssembly.hora}
+                      onChange={(e) => setNewAssembly({ ...newAssembly, hora: e.target.value })}
                     />
                   </div>
                 </div>
@@ -421,6 +474,8 @@ export default function AdminAssembliesPage() {
                     type="text"
                     className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
                     placeholder="Local da assembleia"
+                    value={newAssembly.local}
+                    onChange={(e) => setNewAssembly({ ...newAssembly, local: e.target.value })}
                   />
                 </div>
                 <div>
@@ -429,6 +484,8 @@ export default function AdminAssembliesPage() {
                     className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
                     rows={3}
                     placeholder="Descrição da assembleia..."
+                    value={newAssembly.descricao}
+                    onChange={(e) => setNewAssembly({ ...newAssembly, descricao: e.target.value })}
                   />
                 </div>
 
@@ -440,7 +497,7 @@ export default function AdminAssembliesPage() {
                   >
                     Cancelar
                   </Button>
-                  <Button className="flex-1">
+                  <Button className="flex-1" onClick={handleCreateAssembly}>
                     Criar
                   </Button>
                 </div>
@@ -448,7 +505,51 @@ export default function AdminAssembliesPage() {
             </Card>
           </div>
         )}
-      </main>
+
+        {/* Modal for new candidate */}
+        {showCandidateModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <Card className="w-full max-w-md m-4">
+              <CardHeader>
+                <CardTitle>Adicionar Candidato</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Nome</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
+                    placeholder="Nome do candidato"
+                    value={newCandidate.nome}
+                    onChange={(e) => setNewCandidate({ ...newCandidate, nome: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Cargo</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-[var(--border)] rounded-lg"
+                    placeholder="Ex: Presidente, Vice-Presidente"
+                    value={newCandidate.cargo}
+                    onChange={(e) => setNewCandidate({ ...newCandidate, cargo: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setShowCandidateModal(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button className="flex-1" onClick={handleAddCandidate}>
+                    Adicionar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
     </div>
   );
 }

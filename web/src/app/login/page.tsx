@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { API_ENDPOINTS, APP_ROUTES } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuthContext';
+import { perf } from '@/lib/performance';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -19,7 +20,14 @@ export default function LoginPage() {
     password: '',
   });
 
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    router.push('/dashboard');
+    return null;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
+    perf.start('login submit');
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -39,16 +47,17 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
+        // login function already handles redirect
         login(data.accessToken, data.user);
-        router.push(APP_ROUTES.dashboard);
       } else {
         setError(data.message || 'Erro ao fazer login');
+        setLoading(false);
       }
     } catch {
       setError('Erro ao conectar com o servidor');
-    } finally {
       setLoading(false);
     }
+    perf.end('login submit');
   };
 
   return (

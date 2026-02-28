@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Header, Footer } from "@/components/ui";
 import { ToastProvider } from "@/components/ui/toast";
+import { AuthProvider } from "@/hooks/useAuthContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,11 +24,13 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className={`${inter.variable} font-sans antialiased`}>
         <ToastProvider>
-          <div className="flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+          <AuthProvider>
+            <div className="flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+          </AuthProvider>
         </ToastProvider>
       </body>
     </html>
