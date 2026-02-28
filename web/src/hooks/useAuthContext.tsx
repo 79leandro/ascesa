@@ -8,7 +8,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'DIRECTOR' | 'ASSOCIATED';
+  role: 'ADMIN' | 'ASSOCIADO' | 'USUARIO';
   status: string;
 }
 
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     perf.end('auth login');
 
     // Redirect based on role
-    const redirectPath = userData.role === 'ADMIN' || userData.role === 'DIRECTOR'
+    const redirectPath = userData.role === 'ADMIN'
       ? '/admin'
       : '/dashboard';
     router.push(redirectPath);

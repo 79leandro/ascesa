@@ -1,59 +1,115 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuthContext';
+import { useEffect } from 'react';
 
 export interface AdminLink {
   href: string;
   label: string;
   icon: string;
-  adminOnly?: boolean;
+  roles: string[]; // Which roles can see this link
 }
 
-const DEFAULT_LINKS: AdminLink[] = [
-  { href: '/admin', label: 'Dashboard', icon: '📊' },
-  { href: '/admin/benefits', label: 'Convênios', icon: '🎁' },
-  { href: '/admin/partners', label: 'Parceiros', icon: '🤝' },
-  { href: '/admin/associates', label: 'Associados', icon: '👥' },
-  { href: '/admin/documents', label: 'Documentos', icon: '📄' },
-  { href: '/admin/payments', label: 'Pagamentos', icon: '💳' },
-  { href: '/admin/assemblies', label: 'Assembleias', icon: '🏛️' },
-  { href: '/admin/reports', label: 'Relatórios', icon: '📈' },
-  { href: '/admin/blog', label: 'Blog', icon: '📰' },
-  { href: '/admin/events', label: 'Eventos', icon: '🎉' },
-  { href: '/admin/forum', label: 'Fórum', icon: '💬' },
-  { href: '/admin/showcase', label: 'Vitrine', icon: '🛒' },
-  { href: '/admin/settings', label: 'Configurações', icon: '⚙️', adminOnly: true },
+// Links disponíveis para ADMIN - acesso completo
+const ADMIN_LINKS: AdminLink[] = [
+  { href: '/admin', label: 'Dashboard', icon: '📊', roles: ['ADMIN'] },
+  { href: '/admin/benefits', label: 'Convênios', icon: '🎁', roles: ['ADMIN'] },
+  { href: '/admin/partners', label: 'Parceiros', icon: '🤝', roles: ['ADMIN'] },
+  { href: '/admin/associates', label: 'Associados', icon: '👥', roles: ['ADMIN'] },
+  { href: '/admin/documents', label: 'Documentos', icon: '📄', roles: ['ADMIN'] },
+  { href: '/admin/payments', label: 'Pagamentos', icon: '💳', roles: ['ADMIN'] },
+  { href: '/admin/assemblies', label: 'Assembleias', icon: '🏛️', roles: ['ADMIN'] },
+  { href: '/admin/reports', label: 'Relatórios', icon: '📈', roles: ['ADMIN'] },
+  { href: '/admin/blog', label: 'Blog', icon: '📰', roles: ['ADMIN'] },
+  { href: '/admin/events', label: 'Eventos', icon: '🎉', roles: ['ADMIN'] },
+  { href: '/admin/forum', label: 'Fórum', icon: '💬', roles: ['ADMIN'] },
+  { href: '/admin/showcase', label: 'Vitrine', icon: '🛒', roles: ['ADMIN'] },
+  { href: '/admin/settings', label: 'Configurações', icon: '⚙️', roles: ['ADMIN'] },
 ];
 
-interface AdminSidebarProps {
-  links?: AdminLink[];
-  title?: string;
-}
+// Links disponíveis para ASSOCIADO - área restrita
+const ASSOCIATE_LINKS: AdminLink[] = [
+  { href: '/dashboard', label: 'Dashboard', icon: '📊', roles: ['ASSOCIADO'] },
+  { href: '/dashboard/profile', label: 'Meu Perfil', icon: '👤', roles: ['ASSOCIADO'] },
+  { href: '/dashboard/benefits', label: 'Meus Benefícios', icon: '🎁', roles: ['ASSOCIADO'] },
+  { href: '/dashboard/documents', label: 'Meus Documentos', icon: '📄', roles: ['ASSOCIADO'] },
+  { href: '/dashboard/payments', label: 'Meus Pagamentos', icon: '💳', roles: ['ASSOCIADO'] },
+  { href: '/dashboard/card', label: 'Carteirinha', icon: '💳', roles: ['ASSOCIADO'] },
+  { href: '/dashboard/events', label: 'Eventos', icon: '🎉', roles: ['ASSOCIADO'] },
+  { href: '/dashboard/forum', label: 'Fórum', icon: '💬', roles: ['ASSOCIADO'] },
+  { href: '/dashboard/showcase', label: 'Vitrine Virtual', icon: '🛒', roles: ['ASSOCIADO'] },
+  { href: '/dashboard/contact', label: 'Fale Conosco', icon: '📧', roles: ['ASSOCIADO'] },
+  { href: '/dashboard/lgpd', label: 'LGPD', icon: '🔒', roles: ['ASSOCIADO'] },
+];
 
-export function AdminSidebar({ links = DEFAULT_LINKS, title = 'Painel Admin' }: AdminSidebarProps) {
+// Links disponíveis para USUARIO (não associado)
+const USER_LINKS: AdminLink[] = [
+  { href: '/dashboard', label: 'Dashboard', icon: '📊', roles: ['USUARIO'] },
+  { href: '/dashboard/profile', label: 'Meu Perfil', icon: '👤', roles: ['USUARIO'] },
+  { href: '/dashboard/benefits', label: 'Benefícios', icon: '🎁', roles: ['USUARIO'] },
+  { href: '/dashboard/contact', label: 'Fale Conosco', icon: '📧', roles: ['USUARIO'] },
+];
+
+export function AdminSidebar() {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { user, logout, isAuthenticated } = useAuth();
 
-  const isAdmin = user?.role === 'ADMIN';
+  useEffect(() => {
+    // Se não está autenticado, redireciona para login
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
 
-  // Filter links based on permissions (settings is admin only)
-  const visibleLinks = links.filter(link => {
-    if (link.adminOnly && !isAdmin) return false;
-    return true;
-  });
+    // Se é USUARIO, redireciona para dashboard
+    if (user?.role === 'USUARIO' && pathname.startsWith('/admin')) {
+      router.push('/dashboard');
+    }
+  }, [user, isAuthenticated, pathname, router]);
+
+  if (!user) {
+    return null;
+  }
+
+  // Define os links baseado no perfil
+  let links: AdminLink[] = [];
+  let title = 'Painel';
+
+  switch (user.role) {
+    case 'ADMIN':
+      links = ADMIN_LINKS;
+      title = 'Painel Admin';
+      break;
+    case 'ASSOCIADO':
+      links = ASSOCIATE_LINKS;
+      title = 'Área do Associado';
+      break;
+    case 'USUARIO':
+      links = USER_LINKS;
+      title = 'Área do Usuário';
+      break;
+    default:
+      // Se não tem perfil reconhecido, mostra apenas dashboard
+      links = USER_LINKS;
+      title = 'Dashboard';
+  }
+
+  const isAdminArea = pathname.startsWith('/admin');
 
   return (
     <aside className="w-64 bg-[var(--primary)] text-white p-6 min-h-screen">
       <div className="mb-6">
         <h2 className="text-xl font-bold mb-2">{title}</h2>
-        {user && (
-          <p className="text-sm text-white/80">{user.name}</p>
-        )}
+        <p className="text-sm text-white/80">{user.name}</p>
+        <span className="text-xs bg-white/20 px-2 py-0.5 rounded">
+          {user.role === 'ADMIN' ? 'Administrador' : user.role === 'ASSOCIADO' ? 'Associado' : 'Usuário'}
+        </span>
       </div>
       <nav className="space-y-1">
-        {visibleLinks.map((link) => (
+        {links.map((link) => (
           <Link
             key={link.href}
             href={link.href}
@@ -64,15 +120,9 @@ export function AdminSidebar({ links = DEFAULT_LINKS, title = 'Painel Admin' }: 
             {link.icon} {link.label}
           </Link>
         ))}
-        <Link
-          href="/dashboard"
-          className="block py-2 px-4 rounded hover:bg-white/10 transition-colors mt-4 border-t border-white/20 pt-4"
-        >
-          ← Voltar ao Site
-        </Link>
         <button
           onClick={logout}
-          className="w-full text-left block py-2 px-4 rounded hover:bg-white/10 transition-colors"
+          className="w-full text-left block py-2 px-4 rounded hover:bg-white/10 transition-colors mt-4 border-t border-white/20 pt-4"
         >
           🚪 Sair
         </button>

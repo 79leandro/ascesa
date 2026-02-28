@@ -1,4 +1,4 @@
-// Export utilities for CSV and Excel
+// Utilitários de exportação para CSV e Excel
 import * as XLSX from 'xlsx';
 
 export interface ExportData {
@@ -9,19 +9,19 @@ export interface ExportData {
 }
 
 /**
- * Convert data to CSV format
+ * Converte dados para formato CSV
  */
 export function toCSV(data: ExportData): string {
   const { headers, rows } = data;
 
-  // Create header row
+  // Criar linha de cabeçalho
   const csvRows = [headers.join(',')];
 
-  // Add data rows
+  // Adicionar linhas de dados
   for (const row of rows) {
-    const escapedRow = row.map(cell => {
+    const escapedRow = row.map((cell) => {
       const str = String(cell);
-      // Escape quotes and wrap in quotes if contains comma, quote, or newline
+      // Escapa aspas e envolve em aspas se conter vírgula, aspa ou nova linha
       if (str.includes(',') || str.includes('"') || str.includes('\n')) {
         return `"${str.replace(/"/g, '""')}"`;
       }
@@ -34,79 +34,103 @@ export function toCSV(data: ExportData): string {
 }
 
 /**
- * Convert data to Excel format (buffer)
+ * Converte dados para formato Excel (buffer)
  */
 export function toExcel(data: ExportData): Buffer {
   const { headers, rows, sheetName = 'Dados' } = data;
 
-  // Create worksheet data
+  // Criar dados da planilha
   const wsData = [headers, ...rows];
 
-  // Create workbook and worksheet
+  // Criar workbook e worksheet
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-  // Add worksheet to workbook
+  // Adicionar worksheet ao workbook
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-  // Write to buffer
+  // Escrever para buffer
   return Buffer.from(XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }));
 }
 
 /**
- * Helper to export associates data
+ * Exporta dados de associados para formato de exportação
  */
-export function exportAssociatesData(associates: any[]): ExportData {
-  const headers = ['Nome', 'Email', 'CPF', 'Telefone', 'Status', 'Data de Associação', 'Cidade', 'Estado'];
-  const rows = associates.map(a => [
-    a.usuario?.nome || '',
-    a.usuario?.email || '',
+export function exportAssociatesData(associates: {
+  nome?: string;
+  email?: string;
+  cpf?: string;
+  status?: string;
+  dataAssociacao?: Date | string;
+}[]): ExportData {
+  const headers = ['Nome', 'Email', 'CPF', 'Status', 'Data de Associação'];
+  const rows = associates.map((a) => [
+    a.nome || '',
+    a.email || '',
     a.cpf || '',
-    a.usuario?.telefone || '',
     a.status || '',
-    a.dataAssociacao ? new Date(a.dataAssociacao).toLocaleDateString('pt-BR') : '',
-    a.cidade || '',
-    a.estado || '',
+    a.dataAssociacao
+      ? new Date(a.dataAssociacao).toLocaleDateString('pt-BR')
+      : '',
   ]);
 
   return {
     headers,
     rows,
-    filename: `associados_${new Date().toISOString().split('T')[0]}`,
+    filename: `associados_${new Date().toISOString().split('T')[0]}.csv`,
     sheetName: 'Associados',
   };
 }
 
 /**
- * Helper to export payments data
+ * Exporta dados de pagamentos para formato de exportação
  */
-export function exportPaymentsData(payments: any[]): ExportData {
-  const headers = ['Nome', 'Email', 'Mês', 'Ano', 'Valor', 'Vencimento', 'Pagamento', 'Status'];
-  const rows = payments.map(p => [
-    p.usuario?.nome || '',
-    p.usuario?.email || '',
-    p.mes,
-    p.ano,
-    p.valor,
-    p.dataVencimento ? new Date(p.dataVencimento).toLocaleDateString('pt-BR') : '',
-    p.dataPagamento ? new Date(p.dataPagamento).toLocaleDateString('pt-BR') : '',
+export function exportPaymentsData(payments: {
+  mes?: number;
+  ano?: number;
+  valor?: number;
+  status?: string;
+  dataPagamento?: Date | string | null;
+}[]): ExportData {
+  const headers = ['Mês', 'Ano', 'Valor', 'Status', 'Data de Pagamento'];
+  const rows = payments.map((p) => [
+    p.mes || 0,
+    p.ano || 0,
+    p.valor || 0,
     p.status || '',
+    p.dataPagamento
+      ? new Date(p.dataPagamento).toLocaleDateString('pt-BR')
+      : '',
   ]);
 
   return {
     headers,
     rows,
-    filename: `pagamentos_${new Date().toISOString().split('T')[0]}`,
+    filename: `pagamentos_${new Date().toISOString().split('T')[0]}.csv`,
     sheetName: 'Pagamentos',
   };
 }
 
 /**
- * Helper to export benefits data
+ * Exporta dados de benefícios para formato de exportação
  */
-export function exportBenefitsData(benefits: any[]): ExportData {
-  const headers = ['Nome', 'Categoria', 'Parceiro', 'Desconto', 'Ativo', 'Destacado'];
-  const rows = benefits.map(b => [
+export function exportBenefitsData(benefits: {
+  nome?: string;
+  categoria?: string;
+  nomeParceiro?: string | null;
+  desconto?: string | null;
+  ativo?: boolean;
+  destacado?: boolean;
+}[]): ExportData {
+  const headers = [
+    'Nome',
+    'Categoria',
+    'Parceiro',
+    'Desconto',
+    'Ativo',
+    'Destacado',
+  ];
+  const rows = benefits.map((b) => [
     b.nome || '',
     b.categoria || '',
     b.nomeParceiro || '',
@@ -118,7 +142,7 @@ export function exportBenefitsData(benefits: any[]): ExportData {
   return {
     headers,
     rows,
-    filename: `beneficios_${new Date().toISOString().split('T')[0]}`,
+    filename: `beneficios_${new Date().toISOString().split('T')[0]}.csv`,
     sheetName: 'Benefícios',
   };
 }

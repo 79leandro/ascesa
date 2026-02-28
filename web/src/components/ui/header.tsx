@@ -64,7 +64,7 @@ export function Header({ links = [] }: HeaderProps) {
                   Olá, {user.name.split(' ')[0]}
                 </span>
                 <Link
-                  href={user.role === 'ADMIN' || user.role === 'DIRECTOR' ? '/admin' : '/dashboard'}
+                  href={user.role === 'ADMIN' ? '/admin' : '/dashboard'}
                   className="text-sm font-medium text-white hover:text-[var(--accent)] underline"
                 >
                   Área do Associado

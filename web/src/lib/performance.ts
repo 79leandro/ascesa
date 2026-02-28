@@ -1,5 +1,5 @@
-// Performance Debug Utilities
-// Use in console: window.perfLog() to see timing data
+// Utilitários de Debug de Performance
+// Use no console: window.perfLog() para ver dados de tempo
 
 interface PerfEntry {
   name: string;
@@ -19,7 +19,7 @@ class PerformanceLogger {
       startTime: performance.now(),
     };
     this.entries.push(entry);
-    console.log(`[PERF] Start: ${label}`);
+    console.log(`[PERF] Início: ${label}`);
   }
 
   end(label: string) {
@@ -28,7 +28,7 @@ class PerformanceLogger {
     if (entry) {
       entry.endTime = performance.now();
       entry.duration = entry.endTime - entry.startTime;
-      console.log(`[PERF] End: ${label} - ${entry.duration.toFixed(2)}ms`);
+      console.log(`[PERF] Fim: ${label} - ${entry.duration.toFixed(2)}ms`);
     }
   }
 
@@ -43,7 +43,7 @@ class PerformanceLogger {
       .sort((a, b) => b.duration! - a.duration!)
       .map(e => `${e.name}: ${e.duration?.toFixed(2)}ms`)
       .join('\n');
-    return report || 'No entries';
+    return report || 'Nenhuma entrada';
   }
 
   clear() {
@@ -61,37 +61,37 @@ class PerformanceLogger {
 
 export const perf = new PerformanceLogger();
 
-// React hook for measuring render time
+// Hook React para medir tempo de renderização
 export function useRenderTime(label: string) {
   if (typeof window !== 'undefined') {
-    perf.log(`${label} rendered`);
+    perf.log(`${label} renderizado`);
   }
 }
 
-// Hook to track component mount time
+// Hook para rastrear tempo de montagem do componente
 export function useMountTime(label: string) {
   if (typeof window !== 'undefined') {
-    perf.log(`${label} mounted`);
+    perf.log(`${label} montado`);
   }
 }
 
-// Make available globally for console debugging
+// Disponibilizar globalmente para debug no console
 if (typeof window !== 'undefined') {
   (window as any).perfLog = () => {
-    console.log('\n=== PERFORMANCE REPORT ===\n');
+    console.log('\n=== RELATÓRIO DE PERFORMANCE ===\n');
     console.log(perf.getReport());
     console.log('\n=========================\n');
   };
   (window as any).perfClear = () => {
     perf.clear();
-    console.log('[PERF] Log cleared');
+    console.log('[PERF] Log limpo');
   };
   (window as any).perfDisable = () => {
     perf.disable();
-    console.log('[PERF] Logging disabled');
+    console.log('[PERF] Registro desabilitado');
   };
   (window as any).perfEnable = () => {
     perf.enable();
-    console.log('[PERF] Logging enabled');
+    console.log('[PERF] Registro habilitado');
   };
 }

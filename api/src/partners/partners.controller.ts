@@ -22,8 +22,11 @@ export class ParceirosController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os parceiros' })
-  async findAll(@Query('categoria') categoria?: string, @Query('status') status?: string) {
-    const where: any = {};
+  async findAll(
+    @Query('categoria') categoria?: string,
+    @Query('status') status?: string,
+  ) {
+    const where: Record<string, unknown> = {};
 
     if (categoria && categoria !== 'all') {
       where.categoria = categoria;
@@ -98,7 +101,7 @@ export class ParceirosController {
         success: true,
         parceiro,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao criar parceiro' };
     }
   }
@@ -107,7 +110,10 @@ export class ParceirosController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar parceiro' })
-  async update(@Param('id') id: string, @Body() updateParceiroDto: UpdateParceiroDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateParceiroDto: UpdateParceiroDto,
+  ) {
     try {
       const parceiro = await this.prisma.parceiro.update({
         where: { id },
@@ -133,7 +139,7 @@ export class ParceirosController {
         success: true,
         parceiro,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao atualizar parceiro' };
     }
   }
@@ -152,7 +158,7 @@ export class ParceirosController {
         success: true,
         message: 'Parceiro excluído com sucesso',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao excluir parceiro' };
     }
   }
@@ -183,7 +189,7 @@ export class ParceirosController {
         success: true,
         parceiro: atualizado,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao alterar status' };
     }
   }
@@ -191,7 +197,9 @@ export class ParceirosController {
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Atualizar status do parceiro (ATIVO, INATIVO, PENDENTE)' })
+  @ApiOperation({
+    summary: 'Atualizar status do parceiro (ATIVO, INATIVO, PENDENTE)',
+  })
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {
     try {
       const parceiro = await this.prisma.parceiro.findUnique({
@@ -215,7 +223,7 @@ export class ParceirosController {
         success: true,
         parceiro: atualizado,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao alterar status' };
     }
   }

@@ -90,7 +90,11 @@ export class MailService {
   /**
    * Envia email de confirmação de cadastro
    */
-  async sendConfirmationEmail(to: string, name: string, confirmationToken: string) {
+  async sendConfirmationEmail(
+    to: string,
+    name: string,
+    _confirmationToken: string,
+  ) {
     try {
       const data = await this.resend.emails.send({
         from: 'ASCESA <onboarding@resend.dev>',

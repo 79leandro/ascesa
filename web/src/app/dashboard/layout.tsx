@@ -1,10 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuthContext';
-import { DashboardNav } from '@/components/ui/navigation';
+import { DashboardNav, DashboardLink } from '@/components/ui/navigation';
 import { perf } from '@/lib/performance';
+
+// Links disponíveis para ASSOCIADO - área restrita
+const ASSOCIATE_LINKS: DashboardLink[] = [
+  { href: '/dashboard', label: 'Início', icon: '🏠' },
+  { href: '/dashboard/profile', label: 'Meu Perfil', icon: '👤' },
+  { href: '/dashboard/benefits', label: 'Meus Benefícios', icon: '🎁' },
+  { href: '/dashboard/documents', label: 'Documentos', icon: '📄' },
+  { href: '/dashboard/payments', label: 'Pagamentos', icon: '💰' },
+  { href: '/dashboard/card', label: 'Carteirinha', icon: '💳' },
+  { href: '/dashboard/events', label: 'Eventos', icon: '🎉' },
+  { href: '/dashboard/forum', label: 'Fórum', icon: '💬' },
+  { href: '/dashboard/showcase', label: 'Vitrine Virtual', icon: '🛒' },
+  { href: '/dashboard/contact', label: 'Fale Conosco', icon: '📧' },
+  { href: '/dashboard/lgpd', label: 'LGPD', icon: '🔒' },
+];
+
+// Links disponíveis para USUARIO (não associado)
+const USER_LINKS: DashboardLink[] = [
+  { href: '/dashboard', label: 'Início', icon: '🏠' },
+  { href: '/dashboard/profile', label: 'Meu Perfil', icon: '👤' },
+  { href: '/dashboard/benefits', label: 'Benefícios', icon: '🎁' },
+  { href: '/dashboard/contact', label: 'Fale Conosco', icon: '📧' },
+];
 
 export default function DashboardLayout({
   children,
@@ -13,6 +36,7 @@ export default function DashboardLayout({
 }) {
   perf.start('DashboardLayout render');
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isAuthenticated, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -25,8 +49,8 @@ export default function DashboardLayout({
       return;
     }
 
-    // If admin or director, redirect to admin panel
-    if (user?.role === 'ADMIN' || user?.role === 'DIRECTOR') {
+    // If admin, redirect to admin panel
+    if (user?.role === 'ADMIN') {
       router.push('/admin');
       return;
     }
@@ -35,7 +59,7 @@ export default function DashboardLayout({
   // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false);
-  }, [router.asPath]);
+  }, [pathname]);
 
   // Show loading while checking auth
   if (isLoading || !user) {
@@ -48,6 +72,10 @@ export default function DashboardLayout({
   }
 
   perf.end('DashboardLayout render');
+
+  // Define navigation links based on role
+  const navLinks = user.role === 'ASSOCIADO' ? ASSOCIATE_LINKS : USER_LINKS;
+  const title = user.role === 'ASSOCIADO' ? 'Área do Associado' : 'Área do Usuário';
 
   return (
     <div className="flex min-h-screen">
@@ -63,7 +91,7 @@ export default function DashboardLayout({
       <div className={`fixed lg:static z-50 transition-transform lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <DashboardNav />
+        <DashboardNav links={navLinks} title={title} />
       </div>
 
       {/* Mobile menu button */}

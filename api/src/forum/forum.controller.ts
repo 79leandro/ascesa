@@ -14,6 +14,32 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 
+interface JwtRequest {
+  user: {
+    id: string;
+    nome: string;
+    papel: string;
+  };
+}
+
+class CreateTopicoDto {
+  titulo: string;
+  conteudo: string;
+  categoria: string;
+}
+
+class CreateRespostaDto {
+  conteudo: string;
+}
+
+class UpdateTopicoDto {
+  titulo?: string;
+  conteudo?: string;
+  categoria?: string;
+  fixado?: boolean;
+  fechado?: boolean;
+}
+
 @ApiTags('Forum')
 @Controller('forum')
 export class ForumController {
@@ -22,7 +48,7 @@ export class ForumController {
   @Get()
   @ApiOperation({ summary: 'Listar todos os tópicos' })
   async findAll(@Query('categoria') categoria?: string) {
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (categoria && categoria !== 'all') {
       where.categoria = categoria;
@@ -39,10 +65,7 @@ export class ForumController {
           select: { respostas: true },
         },
       },
-      orderBy: [
-        { fixado: 'desc' },
-        { criadoEm: 'desc' },
-      ],
+      orderBy: [{ fixado: 'desc' }, { criadoEm: 'desc' }],
     });
 
     return {
@@ -54,7 +77,14 @@ export class ForumController {
   @Get('categorias/list')
   @ApiOperation({ summary: 'Listar categorias disponíveis' })
   async getCategories() {
-    const categorias = ['Geral', 'Benefícios', 'Finanças', 'Eventos', 'Dúvidas', 'Sugestões'];
+    const categorias = [
+      'Geral',
+      'Benefícios',
+      'Finanças',
+      'Eventos',
+      'Dúvidas',
+      'Sugestões',
+    ];
 
     return {
       success: true,
@@ -94,13 +124,16 @@ export class ForumController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar novo tópico' })
-  async create(@Body() body: any, @Request() req: any) {
+  async create(
+    @Body() createTopicoDto: CreateTopicoDto,
+    @Request() req: JwtRequest,
+  ) {
     try {
       const topico = await this.prisma.topico.create({
         data: {
-          titulo: body.titulo,
-          conteudo: body.conteudo,
-          categoria: body.categoria,
+          titulo: createTopicoDto.titulo,
+          conteudo: createTopicoDto.conteudo,
+          categoria: createTopicoDto.categoria,
           autor: req.user.nome,
           usuarioId: req.user.id,
         },
@@ -110,7 +143,7 @@ export class ForumController {
         success: true,
         topico,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao criar tópico' };
     }
   }
@@ -119,7 +152,11 @@ export class ForumController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Adicionar resposta a um tópico' })
-  async createReply(@Param('id') id: string, @Body() body: any, @Request() req: any) {
+  async createReply(
+    @Param('id') id: string,
+    @Body() createRespostaDto: CreateRespostaDto,
+    @Request() req: JwtRequest,
+  ) {
     try {
       const topico = await this.prisma.topico.findUnique({ where: { id } });
 
@@ -134,7 +171,7 @@ export class ForumController {
       const resposta = await this.prisma.resposta.create({
         data: {
           topicoId: id,
-          conteudo: body.conteudo,
+          conteudo: createRespostaDto.conteudo,
           autor: req.user.nome,
           usuarioId: req.user.id,
         },
@@ -144,7 +181,7 @@ export class ForumController {
         success: true,
         resposta,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao criar resposta' };
     }
   }
@@ -153,7 +190,11 @@ export class ForumController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar tópico (apenas autor ou admin)' })
-  async update(@Param('id') id: string, @Body() body: any, @Request() req: any) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateTopicoDto: UpdateTopicoDto,
+    @Request() req: JwtRequest,
+  ) {
     try {
       const topico = await this.prisma.topico.findUnique({ where: { id } });
 
@@ -163,7 +204,7 @@ export class ForumController {
 
       // Verificar se é autor ou admin
       const isAuthor = topico.usuarioId === req.user.id;
-      const isAdmin = req.user.papel === 'ADMIN' || req.user.papel === 'DIRETOR';
+      const isAdmin = req.user.papel === 'ADMIN';
 
       if (!isAuthor && !isAdmin) {
         return { success: false, message: 'Sem permissão' };
@@ -172,11 +213,11 @@ export class ForumController {
       const atualizado = await this.prisma.topico.update({
         where: { id },
         data: {
-          titulo: body.titulo,
-          conteudo: body.conteudo,
-          categoria: body.categoria,
-          fixado: body.fixado,
-          fechado: body.fechado,
+          titulo: updateTopicoDto.titulo,
+          conteudo: updateTopicoDto.conteudo,
+          categoria: updateTopicoDto.categoria,
+          fixado: updateTopicoDto.fixado,
+          fechado: updateTopicoDto.fechado,
         },
       });
 
@@ -184,7 +225,7 @@ export class ForumController {
         success: true,
         topico: atualizado,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao atualizar tópico' };
     }
   }
@@ -193,7 +234,7 @@ export class ForumController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Excluir tópico (apenas autor ou admin)' })
-  async remove(@Param('id') id: string, @Request() req: any) {
+  async remove(@Param('id') id: string, @Request() req: JwtRequest) {
     try {
       const topico = await this.prisma.topico.findUnique({ where: { id } });
 
@@ -202,7 +243,8 @@ export class ForumController {
       }
 
       const isAuthor = topico.usuarioId === req.user.id;
-      const isAdmin = req.user.papel === 'ADMIN' || req.user.papel === 'DIRETOR';
+      const isAdmin =
+        req.user.papel === 'ADMIN' || req.user.papel === 'DIRETOR';
 
       if (!isAuthor && !isAdmin) {
         return { success: false, message: 'Sem permissão' };
@@ -214,7 +256,7 @@ export class ForumController {
         success: true,
         message: 'Tópico excluído com sucesso',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao excluir tópico' };
     }
   }
@@ -223,7 +265,7 @@ export class ForumController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Excluir resposta' })
-  async removeReply(@Param('id') id: string, @Request() req: any) {
+  async removeReply(@Param('id') id: string, @Request() req: JwtRequest) {
     try {
       const resposta = await this.prisma.resposta.findUnique({ where: { id } });
 
@@ -232,7 +274,8 @@ export class ForumController {
       }
 
       const isAuthor = resposta.usuarioId === req.user.id;
-      const isAdmin = req.user.papel === 'ADMIN' || req.user.papel === 'DIRETOR';
+      const isAdmin =
+        req.user.papel === 'ADMIN' || req.user.papel === 'DIRETOR';
 
       if (!isAuthor && !isAdmin) {
         return { success: false, message: 'Sem permissão' };
@@ -244,7 +287,7 @@ export class ForumController {
         success: true,
         message: 'Resposta excluída com sucesso',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao excluir resposta' };
     }
   }

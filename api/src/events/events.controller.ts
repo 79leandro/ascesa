@@ -13,6 +13,16 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { CreateEventoDto } from './dto/create-evento.dto';
+import { UpdateEventoDto } from './dto/update-evento.dto';
+
+interface JwtRequest {
+  user: {
+    id: string;
+    nome: string;
+    email: string;
+  };
+}
 
 @ApiTags('Events')
 @Controller('events')
@@ -22,7 +32,7 @@ export class EventsController {
   @Get()
   @ApiOperation({ summary: 'Listar todos os eventos' })
   async findAll(@Query('categoria') categoria?: string) {
-    const where: any = { ativo: true };
+    const where: { ativo: boolean; categoria?: string } = { ativo: true };
 
     if (categoria && categoria !== 'all') {
       where.categoria = categoria;
@@ -48,7 +58,7 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar minhas inscrições' })
-  async findMyRegistrations(@Request() req: any) {
+  async findMyRegistrations(@Request() req: JwtRequest) {
     const inscricoes = await this.prisma.inscricaoEvento.findMany({
       where: { usuarioId: req.user.id },
       include: {
@@ -86,21 +96,21 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar novo evento' })
-  async create(@Body() body: any) {
+  async create(@Body() createEventoDto: CreateEventoDto) {
     try {
       const evento = await this.prisma.evento.create({
         data: {
-          titulo: body.titulo,
-          descricao: body.descricao,
-          data: new Date(body.data),
-          horaInicio: body.horaInicio,
-          horaFim: body.horaFim,
-          local: body.local,
-          categoria: body.categoria,
-          online: body.online || false,
-          preco: parseFloat(body.preco) || 0,
-          vagas: parseInt(body.vagas) || 0,
-          imagem: body.imagem,
+          titulo: createEventoDto.titulo,
+          descricao: createEventoDto.descricao,
+          data: new Date(createEventoDto.data),
+          horaInicio: createEventoDto.horaInicio,
+          horaFim: createEventoDto.horaFim,
+          local: createEventoDto.local,
+          categoria: createEventoDto.categoria,
+          online: createEventoDto.online || false,
+          preco: parseFloat(createEventoDto.preco as unknown as string) || 0,
+          vagas: parseInt(createEventoDto.vagas as unknown as string) || 0,
+          imagem: createEventoDto.imagem,
           ativo: true,
         },
       });
@@ -109,7 +119,7 @@ export class EventsController {
         success: true,
         evento,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao criar evento' };
     }
   }
@@ -118,23 +128,32 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar evento' })
-  async update(@Param('id') id: string, @Body() body: any) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateEventoDto: UpdateEventoDto,
+  ) {
     try {
       const evento = await this.prisma.evento.update({
         where: { id },
         data: {
-          titulo: body.titulo,
-          descricao: body.descricao,
-          data: body.data ? new Date(body.data) : undefined,
-          horaInicio: body.horaInicio,
-          horaFim: body.horaFim,
-          local: body.local,
-          categoria: body.categoria,
-          online: body.online,
-          preco: body.preco ? parseFloat(body.preco) : undefined,
-          vagas: body.vagas ? parseInt(body.vagas) : undefined,
-          imagem: body.imagem,
-          ativo: body.ativo,
+          titulo: updateEventoDto.titulo,
+          descricao: updateEventoDto.descricao,
+          data: updateEventoDto.data
+            ? new Date(updateEventoDto.data)
+            : undefined,
+          horaInicio: updateEventoDto.horaInicio,
+          horaFim: updateEventoDto.horaFim,
+          local: updateEventoDto.local,
+          categoria: updateEventoDto.categoria,
+          online: updateEventoDto.online,
+          preco: updateEventoDto.preco
+            ? parseFloat(updateEventoDto.preco as unknown as string)
+            : undefined,
+          vagas: updateEventoDto.vagas
+            ? parseInt(updateEventoDto.vagas as unknown as string)
+            : undefined,
+          imagem: updateEventoDto.imagem,
+          ativo: updateEventoDto.ativo,
         },
       });
 
@@ -142,7 +161,7 @@ export class EventsController {
         success: true,
         evento,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao atualizar evento' };
     }
   }
@@ -161,7 +180,7 @@ export class EventsController {
         success: true,
         message: 'Evento excluído com sucesso',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao excluir evento' };
     }
   }
@@ -170,7 +189,7 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Inscrever-se em um evento' })
-  async register(@Param('id') id: string, @Request() req: any) {
+  async register(@Param('id') id: string, @Request() req: JwtRequest) {
     try {
       const evento = await this.prisma.evento.findUnique({
         where: { id },
@@ -215,7 +234,7 @@ export class EventsController {
         inscricao,
         message: 'Inscrição realizada com sucesso',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao se inscrever' };
     }
   }
@@ -224,7 +243,10 @@ export class EventsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cancelar inscrição em um evento' })
-  async cancelRegistration(@Param('id') id: string, @Request() req: any) {
+  async cancelRegistration(
+    @Param('id') id: string,
+    @Request() req: JwtRequest,
+  ) {
     try {
       const inscricao = await this.prisma.inscricaoEvento.findFirst({
         where: {
@@ -245,15 +267,21 @@ export class EventsController {
         success: true,
         message: 'Inscrição cancelada com sucesso',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao cancelar inscrição' };
     }
   }
 
   @Get('categorias/list')
   @ApiOperation({ summary: 'Listar categorias disponíveis' })
-  async getCategories() {
-    const categorias = ['Assembleia', 'Workshop', 'Palestra', 'Social', 'Webinar'];
+  getCategories() {
+    const categorias = [
+      'Assembleia',
+      'Workshop',
+      'Palestra',
+      'Social',
+      'Webinar',
+    ];
 
     return {
       success: true,

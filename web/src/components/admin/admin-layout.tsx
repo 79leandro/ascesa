@@ -1,14 +1,13 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { AdminSidebar, AdminLink } from './admin-sidebar';
+import { AdminSidebar } from './admin-sidebar';
 
 interface AdminLayoutProps {
   children: ReactNode;
   title: string;
   subtitle?: string;
   actions?: ReactNode;
-  sidebarLinks?: AdminLink[];
 }
 
 export function AdminLayout({
@@ -16,11 +15,10 @@ export function AdminLayout({
   title,
   subtitle,
   actions,
-  sidebarLinks,
 }: AdminLayoutProps) {
   return (
     <div className="flex min-h-screen">
-      <AdminSidebar links={sidebarLinks} />
+      <AdminSidebar />
       <main className="flex-1 p-8 bg-[var(--gray-50)]">
         <div className="flex justify-between items-center mb-8">
           <div>

@@ -10,6 +10,9 @@ export interface NavLink {
   icon: string;
 }
 
+// Alias for backwards compatibility
+export type DashboardLink = NavLink;
+
 export const DASHBOARD_LINKS: NavLink[] = [
   { href: '/dashboard', label: 'Início', icon: '🏠' },
   { href: '/dashboard/profile', label: 'Meu Perfil', icon: '👤' },
@@ -26,16 +29,17 @@ export const DASHBOARD_LINKS: NavLink[] = [
 
 interface DashboardNavProps {
   links?: NavLink[];
+  title?: string;
 }
 
-export function DashboardNav({ links = DASHBOARD_LINKS }: DashboardNavProps) {
+export function DashboardNav({ links = DASHBOARD_LINKS, title = 'Área do Associado' }: DashboardNavProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
   return (
     <aside className="w-64 bg-[var(--primary)] text-white p-6 min-h-screen">
       <div className="mb-6">
-        <h2 className="text-xl font-bold mb-2">Área do Associado</h2>
+        <h2 className="text-xl font-bold mb-2">{title}</h2>
         {user && (
           <p className="text-sm text-white/80">{user.name}</p>
         )}

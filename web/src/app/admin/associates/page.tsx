@@ -219,7 +219,7 @@ export default function AdminAssociatesPage() {
           {['ALL', 'ATIVO', 'PENDENTE', 'INATIVO'].map((status) => (
             <Button
               key={status}
-              variant={filter === status ? 'default' : 'outline'}
+              variant={filter === status ? 'primary' : 'outline'}
               onClick={() => setFilter(status)}
               size="sm"
             >
@@ -288,7 +288,7 @@ export default function AdminAssociatesPage() {
                                   Aprovar
                                 </Button>
                                 <Button
-                                  variant="destructive"
+                                  variant="outline"
                                   size="sm"
                                   onClick={() => setSelectedAssociate(associate)}
                                 >
@@ -406,7 +406,7 @@ export default function AdminAssociatesPage() {
                       Aprovar
                     </Button>
                     <Button
-                      variant="destructive"
+                      variant="outline"
                       onClick={() => handleReject(selectedAssociate.id)}
                       disabled={actionLoading}
                     >

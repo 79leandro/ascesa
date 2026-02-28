@@ -14,6 +14,34 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 
+interface JwtRequest {
+  user: {
+    id: string;
+  };
+}
+
+interface CreateProductDto {
+  nome: string;
+  descricao?: string;
+  preco: number;
+  precoOriginal?: number;
+  categoria: string;
+  imagens?: string[];
+  vendedor: string;
+  contatoVendedor: string;
+  condicao?: string;
+}
+
+interface UpdateProductDto {
+  nome?: string;
+  descricao?: string;
+  preco?: number;
+  precoOriginal?: number;
+  categoria?: string;
+  imagens?: string[];
+  ativo?: boolean;
+}
+
 @ApiTags('Showcase')
 @Controller('showcase')
 export class ShowcaseController {
@@ -21,8 +49,11 @@ export class ShowcaseController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os produtos' })
-  async findAll(@Query('categoria') categoria?: string, @Query('ativo') ativo?: string) {
-    const where: any = { ativo: true };
+  async findAll(
+    @Query('categoria') categoria?: string,
+    @Query('ativo') ativo?: string,
+  ) {
+    const where: { ativo: boolean; categoria?: string } = { ativo: true };
 
     if (categoria && categoria !== 'all') {
       where.categoria = categoria;
@@ -49,7 +80,7 @@ export class ShowcaseController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar meus produtos' })
-  async findMyProducts(@Request() req: any) {
+  async findMyProducts(@Request() req: JwtRequest) {
     const produtos = await this.prisma.produto.findMany({
       where: { usuarioId: req.user.id },
       orderBy: {
@@ -90,19 +121,21 @@ export class ShowcaseController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar novo produto' })
-  async create(@Body() body: any, @Request() req: any) {
+  async create(@Body() body: CreateProductDto, @Request() req: JwtRequest) {
     try {
       const produto = await this.prisma.produto.create({
         data: {
           nome: body.nome,
           descricao: body.descricao,
-          preco: parseFloat(body.preco),
-          precoOriginal: body.precoOriginal ? parseFloat(body.precoOriginal) : null,
+          preco: body.preco,
+          precoOriginal: body.precoOriginal,
           categoria: body.categoria,
           imagens: body.imagens || [],
-          vendedor: req.user.nome,
+          vendedor: body.vendedor,
           contatoVendedor: body.contatoVendedor,
-          condicao: body.condicao || 'USADO',
+          condicao:
+            (body.condicao as 'NOVO' | 'USADO' | 'REFORMADO') || 'USADO',
+          ativo: true,
           usuarioId: req.user.id,
         },
       });
@@ -111,7 +144,7 @@ export class ShowcaseController {
         success: true,
         produto,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao criar produto' };
     }
   }
@@ -120,18 +153,17 @@ export class ShowcaseController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar produto' })
-  async update(@Param('id') id: string, @Body() body: any) {
+  async update(@Param('id') id: string, @Body() body: UpdateProductDto) {
     try {
       const produto = await this.prisma.produto.update({
         where: { id },
         data: {
           nome: body.nome,
           descricao: body.descricao,
-          preco: body.preco ? parseFloat(body.preco) : undefined,
-          precoOriginal: body.precoOriginal ? parseFloat(body.precoOriginal) : undefined,
+          preco: body.preco,
+          precoOriginal: body.precoOriginal,
           categoria: body.categoria,
           imagens: body.imagens,
-          condicao: body.condicao,
           ativo: body.ativo,
         },
       });
@@ -140,7 +172,7 @@ export class ShowcaseController {
         success: true,
         produto,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao atualizar produto' };
     }
   }
@@ -159,27 +191,8 @@ export class ShowcaseController {
         success: true,
         message: 'Produto excluído com sucesso',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao excluir produto' };
     }
-  }
-
-  @Get('categorias/list')
-  @ApiOperation({ summary: 'Listar categorias disponíveis' })
-  async getCategories() {
-    const categorias = [
-      'Eletrônicos',
-      'Móveis',
-      'Esportes',
-      'Livros',
-      'Veículos',
-      'Roupas',
-      'Outros',
-    ];
-
-    return {
-      success: true,
-      categorias,
-    };
   }
 }

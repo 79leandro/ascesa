@@ -15,7 +15,7 @@ interface UseAdminAuthOptions {
 }
 
 export function useAdminAuth(options: UseAdminAuthOptions = {}) {
-  const { requiredRoles = ['ADMIN', 'DIRECTOR'], redirectTo = '/dashboard' } = options;
+  const { requiredRoles = ['ADMIN'], redirectTo = '/dashboard' } = options;
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
@@ -44,7 +44,7 @@ export function useAdminAuth(options: UseAdminAuthOptions = {}) {
         return;
       }
     } catch (error) {
-      console.error('Error parsing user data:', error);
+      console.error('Erro ao analisar dados do usuário:', error);
       router.push('/login');
     }
   }, [router, requiredRoles, redirectTo, mounted]);

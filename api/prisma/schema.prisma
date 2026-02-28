@@ -46,7 +46,7 @@ enum StatusUsuario {
 
 enum Papel {
   ADMIN    @map("admin")
-  DIRETOR  @map("diretor")
+  USUARIO  @map("usuario")
   ASSOCIADO @map("associado")
 }
 

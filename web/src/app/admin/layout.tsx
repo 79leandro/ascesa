@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuthContext';
 import { AdminSidebar } from '@/components/admin/admin-sidebar';
 import { perf } from '@/lib/performance';
@@ -13,11 +13,11 @@ export default function AdminLayout({
 }) {
   perf.start('AdminLayout render');
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isAuthenticated, isLoading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isAdmin = user?.role === 'ADMIN';
-  const isDirector = user?.role === 'DIRECTOR';
 
   useEffect(() => {
     if (isLoading) return;
@@ -28,17 +28,17 @@ export default function AdminLayout({
       return;
     }
 
-    // If not admin or director, redirect to dashboard
-    if (!isAdmin && !isDirector) {
+    // If not admin, redirect to dashboard
+    if (!isAdmin) {
       router.push('/dashboard');
       return;
     }
-  }, [isLoading, isAuthenticated, isAdmin, isDirector, router]);
+  }, [isLoading, isAuthenticated, isAdmin, router]);
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
     setSidebarOpen(false);
-  }, [router.asPath]);
+  }, [pathname]);
 
   // Show loading while checking auth
   if (isLoading || !user) {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
@@ -29,7 +30,6 @@ interface Candidate {
 }
 
 export default function AdminAssembliesPage() {
-  const router = useRouter();
   const { user, mounted: authLoading } = useAdminAuth();
   const [assemblies, setAssemblies] = useState<Assembly[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,20 +213,7 @@ export default function AdminAssembliesPage() {
   }
 
   return (
-    <div>
-            🏛️ Assembleias
-          </Link>
-          <Link href="/admin/partners" className="block py-2 px-4 rounded hover:bg-white/10">
-            🤝 Parceiros
-          </Link>
-          <Link href="/dashboard" className="block py-2 px-4 rounded hover:bg-white/10 mt-8">
-            ← Voltar ao Site
-          </Link>
-        </nav>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 p-8 bg-[var(--gray-50)]">
+    <div className="p-8 bg-[var(--gray-50)] min-h-screen">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-[var(--foreground)]">Assembleias e Votações</h1>
           <Button onClick={() => setShowModal(true)}>

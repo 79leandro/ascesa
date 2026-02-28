@@ -3,6 +3,15 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 
+interface UpdateUserDto {
+  nome?: string;
+  telefone?: string;
+  profissao?: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
+}
+
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
@@ -43,7 +52,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar dados do usuário' })
-  async update(@Param('id') id: string, @Body() updateData: any) {
+  async update(@Param('id') id: string, @Body() updateData: UpdateUserDto) {
     try {
       const usuario = await this.prisma.usuario.update({
         where: { id },
@@ -54,7 +63,12 @@ export class UsersController {
       });
 
       // Update associated data if exists
-      if (updateData.profissao || updateData.endereco || updateData.cidade || updateData.estado) {
+      if (
+        updateData.profissao ||
+        updateData.endereco ||
+        updateData.cidade ||
+        updateData.estado
+      ) {
         await this.prisma.associado.updateMany({
           where: { usuarioId: id },
           data: {
@@ -75,7 +89,7 @@ export class UsersController {
           telefone: usuario.telefone,
         },
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao atualizar usuário' };
     }
   }

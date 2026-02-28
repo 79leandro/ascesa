@@ -38,7 +38,8 @@ export class DocumentsController {
       storage: diskStorage({
         destination: './uploads/documents',
         filename: (req, file, cb) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
         },
       }),
@@ -108,7 +109,7 @@ export class DocumentsController {
     @Query('status') status?: string,
     @Query('search') search?: string,
   ) {
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (status && status !== 'ALL') {
       where.status = status;
@@ -158,7 +159,10 @@ export class DocumentsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Rejeitar documento' })
-  async rejectDocument(@Param('id') id: string, @Body('reason') reason?: string) {
+  async rejectDocument(
+    @Param('id') id: string,
+    @Body('reason') reason?: string,
+  ) {
     const documento = await this.prisma.documento.update({
       where: { id },
       data: { status: 'REJEITADO' },

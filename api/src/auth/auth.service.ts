@@ -1,4 +1,10 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma';
@@ -55,7 +61,18 @@ export class AuthService {
    * Registra um novo usuário no sistema
    */
   async register(registerDto: RegisterDto) {
-    const { email, password, name, phone, cpf, birthDate, profession, address, city, state } = registerDto;
+    const {
+      email,
+      password,
+      name,
+      phone,
+      cpf,
+      birthDate,
+      profession,
+      address,
+      city,
+      state,
+    } = registerDto;
 
     // Verificar se usuário já existe
     const existingUser = await this.prisma.usuario.findUnique({
@@ -77,7 +94,10 @@ export class AuthService {
     }
 
     // Criptografar senha
-    const hashedPassword = await bcrypt.hash(password, AUTH_CONSTANTS.BCRYPT_ROUNDS);
+    const hashedPassword = await bcrypt.hash(
+      password,
+      AUTH_CONSTANTS.BCRYPT_ROUNDS,
+    );
 
     // Criar usuário e associado em transação
     const usuario = await this.prisma.usuario.create({
@@ -224,13 +244,17 @@ export class AuthService {
 
     // Não revelar se o usuário existe ou não
     if (!usuario) {
-      return { message: 'Se o email existir, você receberá um link de recuperação' };
+      return {
+        message: 'Se o email existir, você receberá um link de recuperação',
+      };
     }
 
     // Gerar token de recuperação
     const resetToken = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + AUTH_CONSTANTS.PASSWORD_RESET_EXPIRY_HOURS);
+    expiresAt.setHours(
+      expiresAt.getHours() + AUTH_CONSTANTS.PASSWORD_RESET_EXPIRY_HOURS,
+    );
 
     // Salvar token no banco
     await this.prisma.redefinicaoSenha.upsert({
@@ -254,7 +278,9 @@ export class AuthService {
       this.logger.error('Erro ao enviar email de recuperação', error);
     }
 
-    return { message: 'Se o email existir, você receberá um link de recuperação' };
+    return {
+      message: 'Se o email existir, você receberá um link de recuperação',
+    };
   }
 
   /**
@@ -282,7 +308,10 @@ export class AuthService {
     }
 
     // Criptografar nova senha
-    const hashedPassword = await bcrypt.hash(newPassword, AUTH_CONSTANTS.BCRYPT_ROUNDS);
+    const hashedPassword = await bcrypt.hash(
+      newPassword,
+      AUTH_CONSTANTS.BCRYPT_ROUNDS,
+    );
 
     // Atualizar senha
     await this.prisma.usuario.update({

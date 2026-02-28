@@ -1,10 +1,33 @@
-import { Controller, Get, Patch, Post, Delete, Body, Param, Query, UseGuards, Res, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Res,
+  Request,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { MailService } from '../mail/mail.service';
 import { exportAssociatesData, toCSV, toExcel } from '../lib/export';
 import type { Response } from 'express';
+
+interface JwtRequest {
+  user: {
+    id: string;
+  };
+}
 
 @ApiTags('Associates')
 @Controller('associates')
@@ -21,7 +44,7 @@ export class AssociatesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Buscar perfil do associado atual' })
-  async getMyProfile(@Req() req: any) {
+  async getMyProfile(@Request() req: JwtRequest) {
     const associate = await this.prisma.associado.findFirst({
       where: { usuarioId: req.user.id },
       include: {
@@ -67,7 +90,7 @@ export class AssociatesController {
     const limitNum = parseInt(limit || '20');
     const skip = (pageNum - 1) * limitNum;
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (status && status !== 'ALL') {
       where.usuario = { status: status };
@@ -123,9 +146,15 @@ export class AssociatesController {
   async getStats() {
     const [total, ativos, inativos, pendentes] = await Promise.all([
       this.prisma.usuario.count({ where: { papel: 'ASSOCIADO' } }),
-      this.prisma.usuario.count({ where: { papel: 'ASSOCIADO', status: 'ATIVO' } }),
-      this.prisma.usuario.count({ where: { papel: 'ASSOCIADO', status: 'INATIVO' } }),
-      this.prisma.usuario.count({ where: { papel: 'ASSOCIADO', status: 'PENDENTE' } }),
+      this.prisma.usuario.count({
+        where: { papel: 'ASSOCIADO', status: 'ATIVO' },
+      }),
+      this.prisma.usuario.count({
+        where: { papel: 'ASSOCIADO', status: 'INATIVO' },
+      }),
+      this.prisma.usuario.count({
+        where: { papel: 'ASSOCIADO', status: 'PENDENTE' },
+      }),
     ]);
 
     return {
@@ -204,7 +233,7 @@ export class AssociatesController {
       );
 
       return { success: true, message: 'Associado aprovado com sucesso' };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao aprovar associado' };
     }
   }
@@ -240,7 +269,7 @@ export class AssociatesController {
       });
 
       return { success: true, message: 'Associado rejeitado' };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao rejeitar associado' };
     }
   }
@@ -272,7 +301,7 @@ export class AssociatesController {
       ]);
 
       return { success: true, message: 'Status atualizado com sucesso' };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao atualizar status' };
     }
   }
@@ -289,7 +318,7 @@ export class AssociatesController {
       });
 
       return { success: true, data: associate };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao atualizar notas' };
     }
   }
@@ -316,7 +345,7 @@ export class AssociatesController {
       );
 
       return { success: true, message: 'Lembrete enviado com sucesso' };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao enviar lembrete' };
     }
   }
@@ -345,7 +374,10 @@ export class AssociatesController {
     const csv = toCSV(data);
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="${data.filename}.csv"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${data.filename}.csv"`,
+    );
     return res.send(csv);
   }
 
@@ -372,8 +404,14 @@ export class AssociatesController {
     const data = exportAssociatesData(associates);
     const buffer = toExcel(data);
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="${data.filename}.xlsx"`);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${data.filename}.xlsx"`,
+    );
     return res.send(buffer);
   }
 }

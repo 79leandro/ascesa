@@ -246,7 +246,7 @@ export default function AdminDocumentsPage() {
                     <Button onClick={() => { handleApprove(selectedDocument.id); setSelectedDocument(null); }}>
                       Aprovar
                     </Button>
-                    <Button variant="destructive" onClick={() => { handleReject(selectedDocument.id); setSelectedDocument(null); }}>
+                    <Button variant="outline" onClick={() => { handleReject(selectedDocument.id); setSelectedDocument(null); }}>
                       Rejeitar
                     </Button>
                   </>

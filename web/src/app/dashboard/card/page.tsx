@@ -160,7 +160,6 @@ export default function CardPage() {
                   value={qrData}
                   size={120}
                   level="M"
-                  includeMargin={false}
                 />
               </div>
             </div>

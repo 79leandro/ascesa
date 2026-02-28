@@ -1,5 +1,20 @@
-import { Controller, Get, Patch, Post, Body, Param, Query, UseGuards, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Res,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { MailService } from '../mail/mail.service';
@@ -36,7 +51,7 @@ export class PaymentsController {
     const limitNum = parseInt(limit || '20');
     const skip = (pageNum - 1) * limitNum;
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
 
     if (status && status !== 'ALL') {
       where.status = status;
@@ -93,10 +108,6 @@ export class PaymentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter estatísticas de pagamentos' })
   async getStats() {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
-
     const [totalRecebido, totalPendente, totalAtrasado] = await Promise.all([
       this.prisma.pagamento.aggregate({
         where: { status: 'PAGO' },
@@ -120,9 +131,12 @@ export class PaymentsController {
       where: { status: 'ATRASADO' },
     });
 
-    const inadimplencia = totalPendentes + totalAtrasados > 0
-      ? ((totalAtrasados / (totalPendentes + totalAtrasados)) * 100).toFixed(1)
-      : '0';
+    const inadimplencia =
+      totalPendentes + totalAtrasados > 0
+        ? ((totalAtrasados / (totalPendentes + totalAtrasados)) * 100).toFixed(
+            1,
+          )
+        : '0';
 
     return {
       success: true,
@@ -190,7 +204,7 @@ export class PaymentsController {
       });
 
       return { success: true, data: payment };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao marcar pagamento como pago' };
     }
   }
@@ -199,7 +213,9 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Gerar cobranças mensais para todos os associados' })
-  async generateMonthlyCharges(@Body() body: { month: number; year: number; amount: number }) {
+  async generateMonthlyCharges(
+    @Body() body: { month: number; year: number; amount: number },
+  ) {
     try {
       const { month, year, amount } = body;
 
@@ -227,7 +243,7 @@ export class PaymentsController {
         success: true,
         message: `${paymentData.length} cobranças geradas com sucesso`,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao gerar cobranças' };
     }
   }
@@ -255,7 +271,7 @@ export class PaymentsController {
       );
 
       return { success: true, message: 'Lembrete enviado com sucesso' };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao enviar lembrete' };
     }
   }
@@ -304,7 +320,10 @@ export class PaymentsController {
     const csv = toCSV(data);
 
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="${data.filename}.csv"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${data.filename}.csv"`,
+    );
     return res.send(csv);
   }
 
@@ -328,8 +347,14 @@ export class PaymentsController {
     const data = exportPaymentsData(payments);
     const buffer = toExcel(data);
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename="${data.filename}.xlsx"`);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${data.filename}.xlsx"`,
+    );
     return res.send(buffer);
   }
 }

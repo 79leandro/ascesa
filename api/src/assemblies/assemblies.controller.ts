@@ -6,13 +6,47 @@ import {
   Delete,
   Body,
   Param,
-  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+
+interface CreateAssemblyDto {
+  titulo: string;
+  tipo: 'ORDINARIA' | 'EXTRAORDINARIA';
+  data: string;
+  hora: string;
+  local: string;
+  descricao?: string;
+}
+
+interface UpdateAssemblyDto {
+  titulo?: string;
+  tipo?: 'ORDINARIA' | 'EXTRAORDINARIA';
+  data?: string;
+  hora?: string;
+  local?: string;
+  descricao?: string;
+  status?: 'AGENDADA' | 'EM_ANDAMENTO' | 'ENCERRADA' | 'CANCELADA';
+}
+
+interface AddCandidateDto {
+  nome: string;
+  cargo: string;
+  foto?: string;
+}
+
+interface VoteDto {
+  candidatoId: string;
+}
+
+interface JwtRequest {
+  user: {
+    id: string;
+  };
+}
 
 @ApiTags('Assemblies')
 @Controller('assemblies')
@@ -84,7 +118,7 @@ export class AssembliesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar nova assembleia' })
-  async create(@Body() body: any) {
+  async create(@Body() body: CreateAssemblyDto) {
     try {
       const assembleia = await this.prisma.assembleia.create({
         data: {
@@ -103,7 +137,7 @@ export class AssembliesController {
         success: true,
         assembleia,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao criar assembleia' };
     }
   }
@@ -112,7 +146,7 @@ export class AssembliesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar assembleia' })
-  async update(@Param('id') id: string, @Body() body: any) {
+  async update(@Param('id') id: string, @Body() body: UpdateAssemblyDto) {
     try {
       const assembleia = await this.prisma.assembleia.update({
         where: { id },
@@ -131,7 +165,7 @@ export class AssembliesController {
         success: true,
         assembleia,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao atualizar assembleia' };
     }
   }
@@ -154,7 +188,7 @@ export class AssembliesController {
         assembleia,
         message: 'Votação iniciada',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao iniciar votação' };
     }
   }
@@ -181,7 +215,10 @@ export class AssembliesController {
         where: { id },
         data: {
           status: 'ENCERRADA',
-          totalVotos: assembleia.candidatos.reduce((acc, c) => acc + c.votos, 0),
+          totalVotos: assembleia.candidatos.reduce(
+            (acc, c) => acc + c.votos,
+            0,
+          ),
         },
       });
 
@@ -190,7 +227,7 @@ export class AssembliesController {
         assembleia: atualizado,
         message: 'Votação encerrada',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao encerrar votação' };
     }
   }
@@ -209,7 +246,7 @@ export class AssembliesController {
         success: true,
         message: 'Assembleia excluída com sucesso',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao excluir assembleia' };
     }
   }
@@ -222,7 +259,7 @@ export class AssembliesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Adicionar candidato a uma assembleia' })
-  async addCandidate(@Param('id') id: string, @Body() body: any) {
+  async addCandidate(@Param('id') id: string, @Body() body: AddCandidateDto) {
     try {
       const candidato = await this.prisma.candidato.create({
         data: {
@@ -237,7 +274,7 @@ export class AssembliesController {
         success: true,
         candidato,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao adicionar candidato' };
     }
   }
@@ -256,7 +293,7 @@ export class AssembliesController {
         success: true,
         message: 'Candidato removido',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao remover candidato' };
     }
   }
@@ -271,8 +308,8 @@ export class AssembliesController {
   @ApiOperation({ summary: 'Votar em um candidato' })
   async vote(
     @Param('id') id: string,
-    @Body() body: { candidatoId: string },
-    @Request() req: any,
+    @Body() body: VoteDto,
+    @Request() req: JwtRequest,
   ) {
     try {
       const assembleia = await this.prisma.assembleia.findUnique({
@@ -310,7 +347,10 @@ export class AssembliesController {
       if (usuario?.papel === 'ASSOCIADO') {
         const associado = usuario.associado;
         if (!associado || associado.status !== 'ATIVO') {
-          return { success: false, message: 'Apenas associados ativos podem votar' };
+          return {
+            success: false,
+            message: 'Apenas associados ativos podem votar',
+          };
         }
       }
 
@@ -333,7 +373,7 @@ export class AssembliesController {
         success: true,
         message: 'Voto registrado com sucesso',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao registrar voto' };
     }
   }
@@ -342,7 +382,7 @@ export class AssembliesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verificar se já votei' })
-  async getMyVote(@Param('id') id: string, @Request() req: any) {
+  async getMyVote(@Param('id') id: string, @Request() req: JwtRequest) {
     const voto = await this.prisma.voto.findFirst({
       where: {
         assembleiaId: id,

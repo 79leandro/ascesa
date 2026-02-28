@@ -29,7 +29,12 @@ export class UploadsService {
 
   get fileFilter() {
     return (req: any, file: any, cb: any) => {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+      const allowedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'application/pdf',
+      ];
       if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
       } else {

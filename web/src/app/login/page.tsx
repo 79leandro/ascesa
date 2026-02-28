@@ -12,7 +12,7 @@ import { perf } from '@/lib/performance';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -21,8 +21,13 @@ export default function LoginPage() {
   });
 
   // Redirect if already authenticated
-  if (isAuthenticated) {
-    router.push('/dashboard');
+  if (isAuthenticated && user) {
+    // Redirect based on role
+    if (user.role === 'ADMIN') {
+      router.push('/admin');
+    } else {
+      router.push('/dashboard');
+    }
     return null;
   }
 

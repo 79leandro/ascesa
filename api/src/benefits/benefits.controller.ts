@@ -22,8 +22,11 @@ export class BeneficiosController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os benefícios' })
-  async findAll(@Query('categoria') categoria?: string, @Query('ativo') ativo?: string) {
-    const where: any = {};
+  async findAll(
+    @Query('categoria') categoria?: string,
+    @Query('ativo') ativo?: string,
+  ) {
+    const where: Record<string, unknown> = {};
 
     if (categoria && categoria !== 'all') {
       where.categoria = categoria;
@@ -105,7 +108,7 @@ export class BeneficiosController {
         success: true,
         beneficio,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao criar benefício' };
     }
   }
@@ -114,7 +117,10 @@ export class BeneficiosController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar benefício' })
-  async update(@Param('id') id: string, @Body() updateBeneficioDto: UpdateBeneficioDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateBeneficioDto: UpdateBeneficioDto,
+  ) {
     try {
       const beneficio = await this.prisma.beneficio.update({
         where: { id },
@@ -138,7 +144,7 @@ export class BeneficiosController {
         success: true,
         beneficio,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao atualizar benefício' };
     }
   }
@@ -157,7 +163,7 @@ export class BeneficiosController {
         success: true,
         message: 'Benefício excluído com sucesso',
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao excluir benefício' };
     }
   }
@@ -187,7 +193,7 @@ export class BeneficiosController {
         success: true,
         beneficio: atualizado,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao alterar status' };
     }
   }
@@ -217,7 +223,7 @@ export class BeneficiosController {
         success: true,
         beneficio: atualizado,
       };
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Erro ao alterar destaque' };
     }
   }
