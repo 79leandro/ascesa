@@ -69,7 +69,7 @@ const benefits = [
     description: 'Pacotes de hospedagem com preços especiais em hotéis parceiros.',
     discount: '20%',
     contact: '(61) 3200-0006',
-    address: 'Various locations',
+    address: 'Várias localidades',
     instructions: 'Informe o código de associado no momento da reserva.',
   },
 ];
