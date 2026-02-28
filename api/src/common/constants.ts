@@ -24,17 +24,17 @@ export const PAGINATION = {
 
 // Status de usuário
 export const USER_STATUS = {
-  PENDING: 'PENDING',
-  ACTIVE: 'ACTIVE',
-  INACTIVE: 'INACTIVE',
-  SUSPENDED: 'SUSPENDED',
+  PENDENTE: 'PENDENTE',
+  ATIVO: 'ATIVO',
+  INATIVO: 'INATIVO',
+  SUSPENSO: 'SUSPENSO',
 } as const;
 
 // Tipos de role
 export const USER_ROLES = {
   ADMIN: 'ADMIN',
-  DIRECTOR: 'DIRECTOR',
-  ASSOCIATED: 'ASSOCIATED',
+  DIRETOR: 'DIRETOR',
+  ASSOCIADO: 'ASSOCIADO',
 } as const;
 
 // Tipos de documento
@@ -48,7 +48,7 @@ export const DOCUMENT_TYPES = {
 
 // Status de documento
 export const DOCUMENT_STATUS = {
-  PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  REJECTED: 'REJECTED',
+  PENDENTE: 'PENDENTE',
+  APROVADO: 'APROVADO',
+  REJEITADO: 'REJEITADO',
 } as const;
