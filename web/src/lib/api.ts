@@ -85,6 +85,7 @@ export const API_ENDPOINTS = {
   associates: {
     list: `${API_URL}/associates`,
     get: (id: string) => `${API_URL}/associates/${id}`,
+    me: `${API_URL}/associates/me`,
     stats: `${API_URL}/associates/stats`,
     approve: (id: string) => `${API_URL}/associates/${id}/approve`,
     reject: (id: string) => `${API_URL}/associates/${id}/reject`,

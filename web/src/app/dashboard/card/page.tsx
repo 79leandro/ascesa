@@ -2,14 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import QRCode from 'react-qr-code';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { APP_ROUTES } from '@/lib/api';
+import { APP_ROUTES, API_ENDPOINTS } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+
+interface Associate {
+  id: string;
+  cpf: string;
+  cidade: string;
+  estado: string;
+  status: string;
+  dataAssociacao: string;
+}
 
 export default function CardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
+  const [associate, setAssociate] = useState<Associate | null>(null);
+  const [loadingAssociate, setLoadingAssociate] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -17,11 +29,66 @@ export default function CardPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('pt-BR');
+  useEffect(() => {
+    if (user) {
+      fetchAssociateData();
+    }
+  }, [user]);
+
+  const fetchAssociateData = async () => {
+    if (!user) return;
+    setLoadingAssociate(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(API_ENDPOINTS.associates.me, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setAssociate(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching associate:', error);
+    } finally {
+      setLoadingAssociate(false);
+    }
   };
 
-  if (isLoading || !user) {
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('pt-BR');
+  };
+
+  const formatCPF = (cpf: string | null | undefined) => {
+    if (!cpf) return '***.***.***-**';
+    // Format CPF: 000.000.000-00
+    const cleaned = cpf.replace(/\D/g, '');
+    if (cleaned.length === 11) {
+      return `${cleaned.slice(0,3)}.${cleaned.slice(3,6)}.${cleaned.slice(6,9)}-${cleaned.slice(9)}`;
+    }
+    return cpf;
+  };
+
+  const maskCPF = (cpf: string | null | undefined) => {
+    if (!cpf) return '***.***.***-**';
+    return formatCPF(cpf);
+  };
+
+  const generateQRData = () => {
+    if (!associate || !user) return '';
+    // Generate a JSON string with associate verification data
+    const qrData = {
+      id: associate.id,
+      nome: user.name,
+      cpf: associate.cpf,
+      status: associate.status,
+      dataAssociacao: associate.dataAssociacao,
+      validadoEm: new Date().toISOString(),
+    };
+    return JSON.stringify(qrData);
+  };
+
+  if (isLoading || loadingAssociate || !user) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[50vh]">
         <div className="text-center">
@@ -32,10 +99,11 @@ export default function CardPage() {
     );
   }
 
-  // Generate a fake card number for display
-  const cardNumber = `**** **** **** ${Math.floor(1000 + Math.random() * 9000)}`;
-  const memberSince = new Date('2026-01-15');
-  const validUntil = new Date('2027-01-15');
+  const memberSince = associate?.dataAssociacao ? new Date(associate.dataAssociacao) : new Date();
+  const validUntil = new Date(memberSince);
+  validUntil.setFullYear(validUntil.getFullYear() + 1);
+
+  const qrData = generateQRData();
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -47,7 +115,7 @@ export default function CardPage() {
         {/* Card Visual */}
         <div className="relative mb-8">
           <div className="bg-gradient-to-r from-[#0D3A12] to-[#2E7D32] rounded-2xl p-8 text-white shadow-xl">
-            <div className="flex justify-between items-start mb-8">
+            <div className="flex justify-between items-start mb-6">
               <div>
                 <p className="text-sm opacity-80">Associação dos Servidores do Sicoob</p>
                 <h2 className="text-2xl font-bold mt-1">ASCESA</h2>
@@ -66,22 +134,34 @@ export default function CardPage() {
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <p className="text-sm opacity-80">CPF</p>
-                <p className="font-mono">***.***.***-**</p>
+                <p className="font-mono">{maskCPF(associate?.cpf)}</p>
               </div>
               <div>
                 <p className="text-sm opacity-80">Matrícula</p>
-                <p className="font-mono">{cardNumber}</p>
+                <p className="font-mono">{associate?.id?.slice(0, 8).toUpperCase() || '00000000'}</p>
               </div>
             </div>
 
             <div className="flex justify-between items-end">
               <div>
                 <p className="text-sm opacity-80">Desde</p>
-                <p className="font-bold">{formatDate(memberSince)}</p>
+                <p className="font-bold">{formatDate(associate?.dataAssociacao)}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm opacity-80">Validado até</p>
-                <p className="font-bold">{formatDate(validUntil)}</p>
+                <p className="font-bold">{formatDate(validUntil.toISOString())}</p>
+              </div>
+            </div>
+
+            {/* QR Code */}
+            <div className="mt-6 flex justify-center">
+              <div className="bg-white p-2 rounded-lg">
+                <QRCode
+                  value={qrData}
+                  size={120}
+                  level="M"
+                  includeMargin={false}
+                />
               </div>
             </div>
           </div>
@@ -89,7 +169,7 @@ export default function CardPage() {
           {/* Badge de status */}
           <div className="absolute -top-3 -right-3">
             <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">
-              ATIVO
+              {associate?.status === 'ATIVO' ? 'ATIVO' : 'INATIVO'}
             </span>
           </div>
         </div>
@@ -109,12 +189,22 @@ export default function CardPage() {
               <span className="font-medium">{user.email}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[var(--muted-foreground)]">Status</span>
-              <span className="font-medium text-green-600">Ativo</span>
+              <span className="text-[var(--muted-foreground)]">CPF</span>
+              <span className="font-medium font-mono">{maskCPF(associate?.cpf)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[var(--muted-foreground)]">Tipo de associação</span>
-              <span className="font-medium">Padrão</span>
+              <span className="text-[var(--muted-foreground)]">Cidade</span>
+              <span className="font-medium">{associate?.cidade || '-'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--muted-foreground)]">Status</span>
+              <span className={`font-medium ${associate?.status === 'ATIVO' ? 'text-green-600' : 'text-red-600'}`}>
+                {associate?.status === 'ATIVO' ? 'Ativo' : 'Inativo'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[var(--muted-foreground)]">Data de associação</span>
+              <span className="font-medium">{formatDate(associate?.dataAssociacao)}</span>
             </div>
           </CardContent>
         </Card>

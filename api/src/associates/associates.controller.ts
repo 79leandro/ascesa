@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Post, Delete, Body, Param, Query, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Patch, Post, Delete, Body, Param, Query, UseGuards, Res, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
@@ -15,6 +15,41 @@ export class AssociatesController {
     private prisma: PrismaService,
     private mailService: MailService,
   ) {}
+
+  /**
+   * Get current user's associate profile
+   */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Buscar perfil do associado atual' })
+  async getMyProfile(@Req() req: any) {
+    const associate = await this.prisma.associado.findFirst({
+      where: { usuarioId: req.user.id },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nome: true,
+            email: true,
+            telefone: true,
+            cpf: true,
+            status: true,
+            papel: true,
+          },
+        },
+      },
+    });
+
+    if (!associate) {
+      return { success: false, message: 'Associado não encontrado' };
+    }
+
+    return {
+      success: true,
+      data: associate,
+    };
+  }
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
