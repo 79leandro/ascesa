@@ -54,36 +54,6 @@ export function toExcel(data: ExportData): Buffer {
 }
 
 /**
- * Generate CSV response for HTTP
- */
-export function generateCSVResponse(data: ExportData): Response {
-  const csv = toCSV(data);
-
-  return new Response(csv, {
-    status: 200,
-    headers: {
-      'Content-Type': 'text/csv; charset=utf-8;',
-      'Content-Disposition': `attachment; filename="${data.filename}.csv"`,
-    },
-  });
-}
-
-/**
- * Generate Excel response for HTTP
- */
-export function generateExcelResponse(data: ExportData): Response {
-  const buffer = toExcel(data);
-
-  return new Response(buffer, {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="${data.filename}.xlsx"`,
-    },
-  });
-}
-
-/**
  * Helper to export associates data
  */
 export function exportAssociatesData(associates: any[]): ExportData {

@@ -2,11 +2,9 @@ import { Controller, Get, Patch, Post, Delete, Body, Param, Query, UseGuards, Re
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { MailService } from '../mail/mail.service';
-import { exportAssociatesData, generateCSVResponse, toExcel } from '../lib/export';
-import { Response } from 'express';
+import { exportAssociatesData, toCSV, toExcel } from '../lib/export';
+import type { Response } from 'express';
 
 @ApiTags('Associates')
 @Controller('associates')
@@ -52,8 +50,7 @@ export class AssociatesController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar todos os associados com filtros' })
   @ApiQuery({ name: 'status', required: false })
@@ -99,7 +96,7 @@ export class AssociatesController {
               telefone: true,
               status: true,
               papel: true,
-              createdAt: true,
+              criadoEm: true,
             },
           },
         },
@@ -120,16 +117,15 @@ export class AssociatesController {
   }
 
   @Get('stats')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter estatísticas de associados' })
   async getStats() {
     const [total, ativos, inativos, pendentes] = await Promise.all([
-      this.prisma.usuario.count({ where: { papel: 'ASSOCIATED' } }),
-      this.prisma.usuario.count({ where: { papel: 'ASSOCIATED', status: 'ATIVO' } }),
-      this.prisma.usuario.count({ where: { papel: 'ASSOCIATED', status: 'INATIVO' } }),
-      this.prisma.usuario.count({ where: { papel: 'ASSOCIATED', status: 'PENDENTE' } }),
+      this.prisma.usuario.count({ where: { papel: 'ASSOCIADO' } }),
+      this.prisma.usuario.count({ where: { papel: 'ASSOCIADO', status: 'ATIVO' } }),
+      this.prisma.usuario.count({ where: { papel: 'ASSOCIADO', status: 'INATIVO' } }),
+      this.prisma.usuario.count({ where: { papel: 'ASSOCIADO', status: 'PENDENTE' } }),
     ]);
 
     return {
@@ -160,7 +156,7 @@ export class AssociatesController {
             cpf: true,
             status: true,
             papel: true,
-            createdAt: true,
+            criadoEm: true,
             ultimoLogin: true,
           },
         },
@@ -175,8 +171,7 @@ export class AssociatesController {
   }
 
   @Patch(':id/approve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Aprovar associado' })
   async approve(@Param('id') id: string) {
@@ -215,8 +210,7 @@ export class AssociatesController {
   }
 
   @Patch(':id/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Rejeitar associado' })
   async reject(@Param('id') id: string, @Body('reason') reason: string) {
@@ -252,8 +246,7 @@ export class AssociatesController {
   }
 
   @Patch(':id/status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar status do associado' })
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {
@@ -285,8 +278,7 @@ export class AssociatesController {
   }
 
   @Patch(':id/notes')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Adicionar/atualizar notas do associado' })
   async updateNotes(@Param('id') id: string, @Body('notes') notes: string) {
@@ -303,8 +295,7 @@ export class AssociatesController {
   }
 
   @Post(':id/send-reminder')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Enviar lembrete de pagamento' })
   async sendReminder(@Param('id') id: string) {
@@ -331,8 +322,7 @@ export class AssociatesController {
   }
 
   @Get('export/csv')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Exportar associados em CSV' })
   async exportCSV(@Res() res: Response) {
@@ -345,14 +335,14 @@ export class AssociatesController {
             email: true,
             telefone: true,
             status: true,
-            createdAt: true,
+            criadoEm: true,
           },
         },
       },
     });
 
     const data = exportAssociatesData(associates);
-    const csv = generateCSVResponse(data);
+    const csv = toCSV(data);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="${data.filename}.csv"`);
@@ -360,8 +350,7 @@ export class AssociatesController {
   }
 
   @Get('export/excel')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Exportar associados em Excel' })
   async exportExcel(@Res() res: Response) {
@@ -374,14 +363,14 @@ export class AssociatesController {
             email: true,
             telefone: true,
             status: true,
-            createdAt: true,
+            criadoEm: true,
           },
         },
       },
     });
 
     const data = exportAssociatesData(associates);
-    const buffer = Buffer.from(data.rows.length > 0 ? toExcel(data) : toExcel(data));
+    const buffer = toExcel(data);
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${data.filename}.xlsx"`);

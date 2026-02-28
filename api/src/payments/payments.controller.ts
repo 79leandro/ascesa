@@ -2,11 +2,9 @@ import { Controller, Get, Patch, Post, Body, Param, Query, UseGuards, Res } from
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { MailService } from '../mail/mail.service';
-import { exportPaymentsData, generateCSVResponse, toExcel } from '../lib/export';
-import { Response } from 'express';
+import { exportPaymentsData, toCSV, toExcel } from '../lib/export';
+import type { Response } from 'express';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -17,8 +15,7 @@ export class PaymentsController {
   ) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar todos os pagamentos com filtros' })
   @ApiQuery({ name: 'status', required: false })
@@ -92,8 +89,7 @@ export class PaymentsController {
   }
 
   @Get('stats')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter estatísticas de pagamentos' })
   async getStats() {
@@ -180,8 +176,7 @@ export class PaymentsController {
   }
 
   @Patch(':id/mark-paid')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Marcar pagamento como pago' })
   async markAsPaid(@Param('id') id: string) {
@@ -201,8 +196,7 @@ export class PaymentsController {
   }
 
   @Post('generate-monthly')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Gerar cobranças mensais para todos os associados' })
   async generateMonthlyCharges(@Body() body: { month: number; year: number; amount: number }) {
@@ -211,7 +205,7 @@ export class PaymentsController {
 
       // Get all active associates
       const associates = await this.prisma.usuario.findMany({
-        where: { papel: 'ASSOCIATED', status: 'ATIVO' },
+        where: { papel: 'ASSOCIADO', status: 'ATIVO' },
         select: { id: true },
       });
 
@@ -239,8 +233,7 @@ export class PaymentsController {
   }
 
   @Post(':id/send-reminder')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Enviar lembrete de pagamento' })
   async sendReminder(@Param('id') id: string) {
@@ -268,8 +261,7 @@ export class PaymentsController {
   }
 
   @Post('update-overdue')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar status de pagamentos atrasados' })
   async updateOverduePayments() {
@@ -292,8 +284,7 @@ export class PaymentsController {
   }
 
   @Get('export/csv')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Exportar pagamentos em CSV' })
   async exportCSV(@Res() res: Response) {
@@ -310,7 +301,7 @@ export class PaymentsController {
     });
 
     const data = exportPaymentsData(payments);
-    const csv = generateCSVResponse(data);
+    const csv = toCSV(data);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="${data.filename}.csv"`);
@@ -318,8 +309,7 @@ export class PaymentsController {
   }
 
   @Get('export/excel')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRETOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Exportar pagamentos em Excel' })
   async exportExcel(@Res() res: Response) {
@@ -336,7 +326,7 @@ export class PaymentsController {
     });
 
     const data = exportPaymentsData(payments);
-    const buffer = Buffer.from(toExcel(data));
+    const buffer = toExcel(data);
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${data.filename}.xlsx"`);

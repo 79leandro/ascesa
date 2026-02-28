@@ -16,8 +16,6 @@ import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { UPLOAD_CONSTANTS, DOCUMENT_STATUS } from '../common/constants';
 
 /**
@@ -103,8 +101,7 @@ export class DocumentsController {
    * Lista todos os documentos (Admin)
    */
   @Get('admin')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRECTOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar todos os documentos (Admin)' })
   async getAllDocuments(
@@ -142,8 +139,7 @@ export class DocumentsController {
    * Aprova documento
    */
   @Patch(':id/approve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRECTOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Aprovar documento' })
   async approveDocument(@Param('id') id: string) {
@@ -159,8 +155,7 @@ export class DocumentsController {
    * Rejeita documento
    */
   @Patch(':id/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('ADMIN', 'DIRECTOR')
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Rejeitar documento' })
   async rejectDocument(@Param('id') id: string, @Body('reason') reason?: string) {

@@ -32,6 +32,7 @@ model Usuario {
   redefinicaoSenha RedefinicaoSenha?
   documentos     Documento[]
   historicosMembership HistoricoMembership[]
+  pagamentos     Pagamento[]
 
   @@map("User")
 }
