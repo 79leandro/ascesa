@@ -10,61 +10,44 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { ParceirosService } from './partners.service';
 import { CreateParceiroDto } from './dto/create-parceiro.dto';
 import { UpdateParceiroDto } from './dto/update-parceiro.dto';
 
 @ApiTags('Parceiros')
 @Controller('parceiros')
 export class ParceirosController {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly parceirosService: ParceirosService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar todos os parceiros' })
+  @ApiOperation({ summary: 'Listar todos os parceiros com paginação' })
   async findAll(
     @Query('categoria') categoria?: string,
     @Query('status') status?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    const where: Record<string, unknown> = {};
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
 
-    if (categoria && categoria !== 'all') {
-      where.categoria = categoria;
-    }
-
-    if (status && status !== 'ALL') {
-      where.status = status;
-    }
-
-    const parceiros = await this.prisma.parceiro.findMany({
-      where,
-      include: {
-        beneficios: true,
-      },
-      orderBy: {
-        criadoEm: 'desc',
-      },
-    });
+    const result = await this.parceirosService.findAll(
+      categoria,
+      status,
+      pageNum,
+      limitNum,
+    );
 
     return {
       success: true,
-      parceiros,
+      ...result,
     };
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Buscar parceiro por ID' })
   async findOne(@Param('id') id: string) {
-    const parceiro = await this.prisma.parceiro.findUnique({
-      where: { id },
-      include: {
-        beneficios: true,
-      },
-    });
-
-    if (!parceiro) {
-      return { success: false, message: 'Parceiro não encontrado' };
-    }
+    const parceiro = await this.parceirosService.findOne(id);
 
     return {
       success: true,
@@ -77,33 +60,12 @@ export class ParceirosController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar novo parceiro' })
   async create(@Body() createParceiroDto: CreateParceiroDto) {
-    try {
-      const parceiro = await this.prisma.parceiro.create({
-        data: {
-          nome: createParceiroDto.nome,
-          razaoSocial: createParceiroDto.razaoSocial,
-          cnpj: createParceiroDto.cnpj,
-          email: createParceiroDto.email,
-          telefone: createParceiroDto.telefone,
-          categoria: createParceiroDto.categoria,
-          desconto: createParceiroDto.desconto,
-          descricao: createParceiroDto.descricao,
-          logo: createParceiroDto.logo,
-          site: createParceiroDto.site,
-          status: createParceiroDto.status ?? 'ATIVO',
-          inicioContrato: createParceiroDto.inicioContrato,
-          fimContrato: createParceiroDto.fimContrato,
-          ativo: createParceiroDto.ativo ?? true,
-        },
-      });
+    const parceiro = await this.parceirosService.create(createParceiroDto);
 
-      return {
-        success: true,
-        parceiro,
-      };
-    } catch {
-      return { success: false, message: 'Erro ao criar parceiro' };
-    }
+    return {
+      success: true,
+      parceiro,
+    };
   }
 
   @Patch(':id')
@@ -114,34 +76,12 @@ export class ParceirosController {
     @Param('id') id: string,
     @Body() updateParceiroDto: UpdateParceiroDto,
   ) {
-    try {
-      const parceiro = await this.prisma.parceiro.update({
-        where: { id },
-        data: {
-          nome: updateParceiroDto.nome,
-          razaoSocial: updateParceiroDto.razaoSocial,
-          cnpj: updateParceiroDto.cnpj,
-          email: updateParceiroDto.email,
-          telefone: updateParceiroDto.telefone,
-          categoria: updateParceiroDto.categoria,
-          desconto: updateParceiroDto.desconto,
-          descricao: updateParceiroDto.descricao,
-          logo: updateParceiroDto.logo,
-          site: updateParceiroDto.site,
-          status: updateParceiroDto.status,
-          inicioContrato: updateParceiroDto.inicioContrato,
-          fimContrato: updateParceiroDto.fimContrato,
-          ativo: updateParceiroDto.ativo,
-        },
-      });
+    const parceiro = await this.parceirosService.update(id, updateParceiroDto);
 
-      return {
-        success: true,
-        parceiro,
-      };
-    } catch {
-      return { success: false, message: 'Erro ao atualizar parceiro' };
-    }
+    return {
+      success: true,
+      parceiro,
+    };
   }
 
   @Delete(':id')
@@ -149,18 +89,12 @@ export class ParceirosController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Excluir parceiro' })
   async remove(@Param('id') id: string) {
-    try {
-      await this.prisma.parceiro.delete({
-        where: { id },
-      });
+    await this.parceirosService.remove(id);
 
-      return {
-        success: true,
-        message: 'Parceiro excluído com sucesso',
-      };
-    } catch {
-      return { success: false, message: 'Erro ao excluir parceiro' };
-    }
+    return {
+      success: true,
+      message: 'Parceiro excluído com sucesso',
+    };
   }
 
   @Patch(':id/toggle-status')
@@ -168,30 +102,12 @@ export class ParceirosController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Alternar status do parceiro' })
   async toggleStatus(@Param('id') id: string) {
-    try {
-      const parceiro = await this.prisma.parceiro.findUnique({
-        where: { id },
-      });
+    const parceiro = await this.parceirosService.toggleStatus(id);
 
-      if (!parceiro) {
-        return { success: false, message: 'Parceiro não encontrado' };
-      }
-
-      const atualizado = await this.prisma.parceiro.update({
-        where: { id },
-        data: {
-          ativo: !parceiro.ativo,
-          status: parceiro.ativo ? 'INATIVO' : 'ATIVO',
-        },
-      });
-
-      return {
-        success: true,
-        parceiro: atualizado,
-      };
-    } catch {
-      return { success: false, message: 'Erro ao alterar status' };
-    }
+    return {
+      success: true,
+      parceiro,
+    };
   }
 
   @Patch(':id/status')
@@ -201,30 +117,11 @@ export class ParceirosController {
     summary: 'Atualizar status do parceiro (ATIVO, INATIVO, PENDENTE)',
   })
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {
-    try {
-      const parceiro = await this.prisma.parceiro.findUnique({
-        where: { id },
-      });
+    const parceiro = await this.parceirosService.updateStatus(id, status);
 
-      if (!parceiro) {
-        return { success: false, message: 'Parceiro não encontrado' };
-      }
-
-      const ativo = status === 'ATIVO';
-      const atualizado = await this.prisma.parceiro.update({
-        where: { id },
-        data: {
-          status,
-          ativo,
-        },
-      });
-
-      return {
-        success: true,
-        parceiro: atualizado,
-      };
-    } catch {
-      return { success: false, message: 'Erro ao alterar status' };
-    }
+    return {
+      success: true,
+      parceiro,
+    };
   }
 }

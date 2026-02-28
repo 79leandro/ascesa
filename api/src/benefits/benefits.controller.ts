@@ -10,61 +10,44 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { BeneficiosService } from './benefits.service';
 import { CreateBeneficioDto } from './dto/create-beneficio.dto';
 import { UpdateBeneficioDto } from './dto/update-beneficio.dto';
 
 @ApiTags('Beneficios')
 @Controller('beneficios')
 export class BeneficiosController {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly beneficiosService: BeneficiosService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Listar todos os benefícios' })
+  @ApiOperation({ summary: 'Listar todos os benefícios com paginação' })
   async findAll(
     @Query('categoria') categoria?: string,
     @Query('ativo') ativo?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    const where: Record<string, unknown> = {};
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
 
-    if (categoria && categoria !== 'all') {
-      where.categoria = categoria;
-    }
-
-    if (ativo !== undefined) {
-      where.ativo = ativo === 'true';
-    }
-
-    const beneficios = await this.prisma.beneficio.findMany({
-      where,
-      include: {
-        parceiro: true,
-      },
-      orderBy: {
-        ordem: 'asc',
-      },
-    });
+    const result = await this.beneficiosService.findAll(
+      categoria,
+      ativo,
+      pageNum,
+      limitNum,
+    );
 
     return {
       success: true,
-      beneficios,
+      ...result,
     };
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Buscar benefício por ID' })
   async findOne(@Param('id') id: string) {
-    const beneficio = await this.prisma.beneficio.findUnique({
-      where: { id },
-      include: {
-        parceiro: true,
-      },
-    });
-
-    if (!beneficio) {
-      return { success: false, message: 'Benefício não encontrado' };
-    }
+    const beneficio = await this.beneficiosService.findOne(id);
 
     return {
       success: true,
@@ -77,40 +60,12 @@ export class BeneficiosController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar novo benefício' })
   async create(@Body() createBeneficioDto: CreateBeneficioDto) {
-    try {
-      // Generate slug from name
-      const slug = createBeneficioDto.nome
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
+    const beneficio = await this.beneficiosService.create(createBeneficioDto);
 
-      const beneficio = await this.prisma.beneficio.create({
-        data: {
-          nome: createBeneficioDto.nome,
-          slug: `${slug}-${Date.now()}`,
-          descricao: createBeneficioDto.descricao,
-          termos: createBeneficioDto.termos,
-          categoria: createBeneficioDto.categoria,
-          nomeParceiro: createBeneficioDto.nomeParceiro,
-          logoParceiro: createBeneficioDto.logoParceiro,
-          desconto: createBeneficioDto.desconto,
-          imagem: createBeneficioDto.imagem,
-          ativo: createBeneficioDto.ativo ?? true,
-          destacado: createBeneficioDto.destacado ?? false,
-          ordem: createBeneficioDto.ordem ?? 0,
-          parceiroId: createBeneficioDto.parceiroId,
-        },
-      });
-
-      return {
-        success: true,
-        beneficio,
-      };
-    } catch {
-      return { success: false, message: 'Erro ao criar benefício' };
-    }
+    return {
+      success: true,
+      beneficio,
+    };
   }
 
   @Patch(':id')
@@ -121,32 +76,12 @@ export class BeneficiosController {
     @Param('id') id: string,
     @Body() updateBeneficioDto: UpdateBeneficioDto,
   ) {
-    try {
-      const beneficio = await this.prisma.beneficio.update({
-        where: { id },
-        data: {
-          nome: updateBeneficioDto.nome,
-          descricao: updateBeneficioDto.descricao,
-          termos: updateBeneficioDto.termos,
-          categoria: updateBeneficioDto.categoria,
-          nomeParceiro: updateBeneficioDto.nomeParceiro,
-          logoParceiro: updateBeneficioDto.logoParceiro,
-          desconto: updateBeneficioDto.desconto,
-          imagem: updateBeneficioDto.imagem,
-          ativo: updateBeneficioDto.ativo,
-          destacado: updateBeneficioDto.destacado,
-          ordem: updateBeneficioDto.ordem,
-          parceiroId: updateBeneficioDto.parceiroId,
-        },
-      });
+    const beneficio = await this.beneficiosService.update(id, updateBeneficioDto);
 
-      return {
-        success: true,
-        beneficio,
-      };
-    } catch {
-      return { success: false, message: 'Erro ao atualizar benefício' };
-    }
+    return {
+      success: true,
+      beneficio,
+    };
   }
 
   @Delete(':id')
@@ -154,18 +89,12 @@ export class BeneficiosController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Excluir benefício' })
   async remove(@Param('id') id: string) {
-    try {
-      await this.prisma.beneficio.delete({
-        where: { id },
-      });
+    await this.beneficiosService.remove(id);
 
-      return {
-        success: true,
-        message: 'Benefício excluído com sucesso',
-      };
-    } catch {
-      return { success: false, message: 'Erro ao excluir benefício' };
-    }
+    return {
+      success: true,
+      message: 'Benefício excluído com sucesso',
+    };
   }
 
   @Patch(':id/toggle-status')
@@ -173,29 +102,12 @@ export class BeneficiosController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Alternar status do benefício' })
   async toggleStatus(@Param('id') id: string) {
-    try {
-      const beneficio = await this.prisma.beneficio.findUnique({
-        where: { id },
-      });
+    const beneficio = await this.beneficiosService.toggleStatus(id);
 
-      if (!beneficio) {
-        return { success: false, message: 'Benefício não encontrado' };
-      }
-
-      const atualizado = await this.prisma.beneficio.update({
-        where: { id },
-        data: {
-          ativo: !beneficio.ativo,
-        },
-      });
-
-      return {
-        success: true,
-        beneficio: atualizado,
-      };
-    } catch {
-      return { success: false, message: 'Erro ao alterar status' };
-    }
+    return {
+      success: true,
+      beneficio,
+    };
   }
 
   @Patch(':id/featured')
@@ -203,28 +115,11 @@ export class BeneficiosController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Alternar destaque do benefício' })
   async toggleFeatured(@Param('id') id: string) {
-    try {
-      const beneficio = await this.prisma.beneficio.findUnique({
-        where: { id },
-      });
+    const beneficio = await this.beneficiosService.toggleFeatured(id);
 
-      if (!beneficio) {
-        return { success: false, message: 'Benefício não encontrado' };
-      }
-
-      const atualizado = await this.prisma.beneficio.update({
-        where: { id },
-        data: {
-          destacado: !beneficio.destacado,
-        },
-      });
-
-      return {
-        success: true,
-        beneficio: atualizado,
-      };
-    } catch {
-      return { success: false, message: 'Erro ao alterar destaque' };
-    }
+    return {
+      success: true,
+      beneficio,
+    };
   }
 }

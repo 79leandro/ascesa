@@ -83,6 +83,9 @@ model Associado {
   criadoEm        DateTime  @default(now()) @map("criado_em")
   atualizadoEm    DateTime  @updatedAt @map("atualizado_em")
 
+  @@index([status])
+  @@index([statusPagamento])
+  @@index([cidade, estado])
   @@map("associados")
 }
 
@@ -142,6 +145,9 @@ model Beneficio {
   parceiro        Parceiro? @relation(fields: [parceiroId], references: [id], onDelete: SetNull)
   favoritos       Favorito[]
 
+  @@index([categoria])
+  @@index([ativo, categoria])
+  @@index([destacado, ativo])
   @@map("beneficios")
 }
 
@@ -168,6 +174,8 @@ model Parceiro {
   // Relacionamentos
   beneficios      Beneficio[]
 
+  @@index([categoria])
+  @@index([status, ativo])
   @@map("parceiros")
 }
 
@@ -246,6 +254,9 @@ model Pagamento {
   criadoEm        DateTime        @default(now()) @map("criado_em")
   atualizadoEm    DateTime        @updatedAt @map("atualizado_em")
 
+  @@index([usuarioId, ano, mes])
+  @@index([status])
+  @@index([dataVencimento])
   @@map("pagamentos")
 }
 
@@ -334,6 +345,9 @@ model Evento {
   criadoEm        DateTime  @default(now()) @map("criado_em")
   atualizadoEm    DateTime  @updatedAt @map("atualizado_em")
 
+  @@index([data])
+  @@index([categoria])
+  @@index([ativo, data])
   @@map("eventos")
 }
 
