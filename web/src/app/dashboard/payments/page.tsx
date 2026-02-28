@@ -2,48 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { APP_ROUTES } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { APP_ROUTES, API_ENDPOINTS } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuthContext';
 
 interface Payment {
   id: string;
-  date: string;
-  description: string;
-  amount: number;
-  status: 'PAID' | 'PENDING' | 'OVERDUE';
-  type: 'MONTHLY' | 'ANNUAL';
+  mes: number;
+  ano: number;
+  valor: number;
+  dataVencimento: string;
+  dataPagamento: string | null;
+  status: 'PAGO' | 'PENDENTE' | 'ATRASADO' | 'CANCELADO';
 }
 
 export default function PaymentsPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [payments] = useState<Payment[]>([
-    {
-      id: '1',
-      date: '2026-02-15',
-      description: 'Mensalidade Fevereiro/2026',
-      amount: 35.00,
-      status: 'PAID',
-      type: 'MONTHLY',
-    },
-    {
-      id: '2',
-      date: '2026-01-15',
-      description: 'Mensalidade Janeiro/2026',
-      amount: 35.00,
-      status: 'PAID',
-      type: 'MONTHLY',
-    },
-    {
-      id: '3',
-      date: '2025-12-15',
-      description: 'Mensalidade Dezembro/2025',
-      amount: 35.00,
-      status: 'PAID',
-      type: 'MONTHLY',
-    },
-  ]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -51,13 +28,38 @@ export default function PaymentsPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
+  useEffect(() => {
+    if (user?.id) {
+      fetchPayments();
+    }
+  }, [user?.id]);
+
+  const fetchPayments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(API_ENDPOINTS.payments.myPayments, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPayments(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PAID':
+      case 'PAGO':
         return 'bg-green-100 text-green-800';
-      case 'PENDING':
+      case 'PENDENTE':
         return 'bg-yellow-100 text-yellow-800';
-      case 'OVERDUE':
+      case 'ATRASADO':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -66,20 +68,22 @@ export default function PaymentsPage() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'PAID':
+      case 'PAGO':
         return 'Pago';
-      case 'PENDING':
+      case 'PENDENTE':
         return 'Pendente';
-      case 'OVERDUE':
+      case 'ATRASADO':
         return 'Atrasado';
+      case 'CANCELADO':
+        return 'Cancelado';
       default:
         return status;
     }
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
   const formatCurrency = (amount: number) => {
@@ -89,11 +93,7 @@ export default function PaymentsPage() {
     }).format(amount);
   };
 
-  const totalPaid = payments
-    .filter(p => p.status === 'PAID')
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  if (isLoading || !user) {
+  if (isLoading || loading || !user) {
     return (
       <div className="container mx-auto px-4 py-12 flex justify-center items-center min-h-[50vh]">
         <div className="text-center">
@@ -104,78 +104,87 @@ export default function PaymentsPage() {
     );
   }
 
+  const totalPaid = payments.filter(p => p.status === 'PAGO').reduce((acc, p) => acc + p.valor, 0);
+  const totalPending = payments.filter(p => p.status === 'PENDENTE' || p.status === 'ATRASADO').reduce((acc, p) => acc + p.valor, 0);
+
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-[var(--foreground)] mb-8">
-          Extrato de Pagamentos
-        </h1>
+      <h1 className="text-3xl font-bold text-[var(--foreground)] mb-8">
+        Meus Pagamentos
+      </h1>
 
-        {/* Cards de resumo */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-[var(--muted-foreground)]">Total Pago</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-[var(--muted-foreground)]">Mensalidade</p>
-              <p className="text-2xl font-bold text-[var(--foreground)]">{formatCurrency(35.00)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-sm text-[var(--muted-foreground)]">Próximo Vencimento</p>
-              <p className="text-2xl font-bold text-[var(--foreground)]">15/03/2026</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Lista de pagamentos */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card>
-          <CardHeader>
-            <CardTitle>Histórico de Pagamentos</CardTitle>
-            <CardDescription>
-              Veja todos os seus pagamentos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {payments.length === 0 ? (
-              <p className="text-center text-[var(--muted-foreground)] py-8">
-                Nenhum pagamento registrado.
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {payments.map((payment) => (
-                  <div
-                    key={payment.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium text-[var(--foreground)]">
-                        {payment.description}
-                      </p>
-                      <p className="text-sm text-[var(--muted-foreground)]">
-                        {formatDate(payment.date)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-[var(--foreground)]">
-                        {formatCurrency(payment.amount)}
-                      </p>
-                      <span className={`inline-block px-2 py-1 rounded-full text-xs ${getStatusColor(payment.status)}`}>
-                        {getStatusLabel(payment.status)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <CardContent className="pt-4">
+            <p className="text-sm text-[var(--muted-foreground)]">Total Pago</p>
+            <p className="text-2xl font-bold text-green-600">{formatCurrency(totalPaid)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-[var(--muted-foreground)]">Pendente</p>
+            <p className="text-2xl font-bold text-yellow-600">{formatCurrency(totalPending)}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4">
+            <p className="text-sm text-[var(--muted-foreground)]">Mensalidade</p>
+            <p className="text-2xl font-bold">{formatCurrency(35)}</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Payments List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Histórico de Pagamentos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {payments.length === 0 ? (
+            <div className="text-center py-8 text-[var(--muted-foreground)]">
+              Nenhum pagamento encontrado.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">Período</th>
+                    <th className="text-left py-3 px-4">Valor</th>
+                    <th className="text-left py-3 px-4">Vencimento</th>
+                    <th className="text-left py-3 px-4">Pagamento</th>
+                    <th className="text-left py-3 px-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((payment) => (
+                    <tr key={payment.id} className="border-b hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        {payment.mes}/{payment.ano}
+                      </td>
+                      <td className="py-3 px-4 font-medium">
+                        {formatCurrency(payment.valor)}
+                      </td>
+                      <td className="py-3 px-4">
+                        {formatDate(payment.dataVencimento)}
+                      </td>
+                      <td className="py-3 px-4">
+                        {payment.dataPagamento ? formatDate(payment.dataPagamento) : '-'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(payment.status)}`}>
+                          {getStatusLabel(payment.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

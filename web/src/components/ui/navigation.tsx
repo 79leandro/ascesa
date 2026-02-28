@@ -21,6 +21,7 @@ export const DASHBOARD_LINKS: NavLink[] = [
   { href: '/dashboard/forum', label: 'Fórum', icon: '💬' },
   { href: '/dashboard/showcase', label: 'Vitrine Virtual', icon: '🛒' },
   { href: '/dashboard/contact', label: 'Fale Conosco', icon: '📧' },
+  { href: '/dashboard/lgpd', label: 'LGPD', icon: '🔒' },
 ];
 
 interface DashboardNavProps {

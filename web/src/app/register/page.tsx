@@ -34,6 +34,7 @@ export default function RegisterPage() {
     state: '',
     password: '',
     confirmPassword: '',
+    lgpdConsent: false,
   });
 
   const validate = (): boolean => {
@@ -57,6 +58,10 @@ export default function RegisterPage() {
 
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = ERROR_MESSAGES.confirmPassword;
+    }
+
+    if (!formData.lgpdConsent) {
+      newErrors.lgpdConsent = 'Você precisa aceitar os termos para se cadastrar';
     }
 
     setErrors(newErrors);
@@ -264,6 +269,35 @@ export default function RegisterPage() {
                     required
                   />
                 </div>
+              </div>
+
+              {/* LGPD Consent */}
+              <div className="border-t pt-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.lgpdConsent}
+                    onChange={(e) => {
+                      setFormData({ ...formData, lgpdConsent: e.target.checked });
+                      if (errors.lgpdConsent) setErrors({ ...errors, lgpdConsent: '' });
+                    }}
+                    className="mt-1 w-5 h-5 rounded border-gray-300 text-[var(--primary)] focus:ring-[var(--primary)]"
+                  />
+                  <span className="text-sm text-[var(--muted-foreground)]">
+                    Eu li e concordo com os{' '}
+                    <Link href="/terms" target="_blank" className="text-[var(--secondary)] hover:underline">
+                      Termos de Uso
+                    </Link>{' '}
+                    e a{' '}
+                    <Link href="/privacy" target="_blank" className="text-[var(--secondary)] hover:underline">
+                      Política de Privacidade
+                    </Link>
+                    . Estou ciente de que meus dados serão tratados em conformidade com a LGPD.
+                  </span>
+                </label>
+                {errors.lgpdConsent && (
+                  <p className="text-red-500 text-sm mt-1">{errors.lgpdConsent}</p>
+                )}
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>

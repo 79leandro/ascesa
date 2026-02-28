@@ -102,6 +102,7 @@ enum StatusPagamento {
   PAGO     @map("PAID")
   PENDENTE @map("PENDING")
   ATRASADO @map("OVERDUE")
+  CANCELADO @map("CANCELLED")
 }
 
 // Dados específicos do administrador
@@ -222,6 +223,29 @@ model HistoricoMembership {
   criadoPor   String?       @map("createdBy")
 
   @@map("MembershipHistory")
+}
+
+// ============================================
+// MÓDULO: Pagamentos
+// ============================================
+
+model Pagamento {
+  id              String          @id @default(uuid())
+  usuarioId       String          @map("userId")
+  usuario         Usuario         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  mes             Int             @map("month")
+  ano             Int             @map("year")
+  valor           Float           @map("amount")
+  dataVencimento  DateTime        @map("dueDate")
+  dataPagamento   DateTime?      @map("paidDate")
+  status          StatusPagamento @default(PENDENTE)
+  metodoPagamento String?        @map("paymentMethod")
+  transacaoId     String?        @map("transactionId")
+  observacoes     String?        @map("notes")
+  criadoEm        DateTime        @default(now()) @map("createdAt")
+  atualizadoEm    DateTime        @updatedAt @map("updatedAt")
+
+  @@map("Payment")
 }
 
 // ============================================

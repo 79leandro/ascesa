@@ -111,4 +111,31 @@ export class MailService {
       throw error;
     }
   }
+
+  /**
+   * Envia email de lembrete de pagamento
+   */
+  async sendPaymentReminderEmail(to: string, name: string) {
+    try {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const data = await this.resend.emails.send({
+        from: 'ASCESA <onboarding@resend.dev>',
+        to,
+        subject: 'Lembrete de Pagamento - ASCESA',
+        html: `
+          <h1>Olá, ${name}!</h1>
+          <p>Este é um lembrete sobre o pagamento da sua mensalidade ASCESA.</p>
+          <p>Acesse sua área do associado para verificar os detalhes:</p>
+          <p><a href="${frontendUrl}/dashboard/payments">${frontendUrl}/dashboard/payments</a></p>
+          <p>Em caso de dúvidas, entre em contato conosco.</p>
+          <p>Att,<br>Equipe ASCESA</p>
+        `,
+      });
+
+      return data;
+    } catch (error) {
+      this.logger.error('Erro ao enviar email de lembrete', error);
+      throw error;
+    }
+  }
 }

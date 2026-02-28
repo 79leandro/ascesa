@@ -14,6 +14,8 @@ import { ShowcaseModule } from './showcase/showcase.module';
 import { ForumModule } from './forum/forum.module';
 import { EventsModule } from './events/events.module';
 import { AssembliesModule } from './assemblies/assemblies.module';
+import { AssociatesModule } from './associates/associates.module';
+import { PaymentsModule } from './payments/payments.module';
 import { SeedService } from './seed.service';
 
 @Module({
@@ -30,6 +32,8 @@ import { SeedService } from './seed.service';
     ForumModule,
     EventsModule,
     AssembliesModule,
+    AssociatesModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService, SeedService],
