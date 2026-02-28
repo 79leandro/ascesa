@@ -113,3 +113,30 @@ Uses Prisma ORM with PostgreSQL. Schema uses Portuguese field names with `@map` 
 - API: 3000
 - PostgreSQL: 5432 (docker)
 - Swagger: `/api/docs`
+
+## GitHub Actions CI/CD
+
+O projeto inclui um workflow de CI/CD em `.github/workflows/ci.yml`.
+
+### Configuração Necessária
+
+Para ativar o workflow, você precisa de um Personal Access Token (PAT) com a scope `workflow`:
+
+1. Acesse GitHub → Settings → Developer settings → Personal access tokens
+2. Generate new token (Classic)
+3. Selecione a scope `workflow`
+4. Salve o token e use para push
+
+### Adicionar Workflow Manualmente
+
+Caso o push do workflow falhar, você pode adicionar manualmente:
+1. Copie o conteúdo de `.github/workflows/ci.yml`
+2. No GitHub, vá para Actions → New workflow
+3. Cole o conteúdo e commite
+
+### Variáveis de Ambiente Necessárias no Repo
+
+Configure no GitHub Settings → Secrets and variables → Actions:
+- `DATABASE_URL` - URL do banco PostgreSQL
+- `JWT_SECRET` - Chave secreta para JWT
+- `RESEND_API_KEY` - Chave da API Resend (opcional)
