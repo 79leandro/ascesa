@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsDateString,
 } from 'class-validator';
+import { IsCPF } from 'class-validator-cpf';
 
 export class RegisterDto {
   @IsEmail()
@@ -21,7 +22,7 @@ export class RegisterDto {
   @IsOptional()
   phone?: string;
 
-  @IsString()
+  @IsCPF()
   cpf: string;
 
   @IsDateString()

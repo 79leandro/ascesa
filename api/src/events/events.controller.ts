@@ -11,8 +11,8 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { PrismaService } from '../prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
+import { EventsService } from './events.service';
 import { CreateEventoDto } from './dto/create-evento.dto';
 import { UpdateEventoDto } from './dto/update-evento.dto';
 
@@ -27,30 +27,23 @@ interface JwtRequest {
 @ApiTags('Events')
 @Controller('events')
 export class EventsController {
-  constructor(private prisma: PrismaService) {}
+  constructor(private eventsService: EventsService) {}
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os eventos' })
-  async findAll(@Query('categoria') categoria?: string) {
-    const where: { ativo: boolean; categoria?: string } = { ativo: true };
+  async findAll(
+    @Query('categoria') categoria?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
 
-    if (categoria && categoria !== 'all') {
-      where.categoria = categoria;
-    }
-
-    const eventos = await this.prisma.evento.findMany({
-      where,
-      include: {
-        inscricoes: true,
-      },
-      orderBy: {
-        data: 'asc',
-      },
-    });
+    const result = await this.eventsService.findAll(categoria, pageNum, limitNum);
 
     return {
       success: true,
-      eventos,
+      ...result,
     };
   }
 
@@ -59,12 +52,7 @@ export class EventsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar minhas inscrições' })
   async findMyRegistrations(@Request() req: JwtRequest) {
-    const inscricoes = await this.prisma.inscricaoEvento.findMany({
-      where: { usuarioId: req.user.id },
-      include: {
-        evento: true,
-      },
-    });
+    const inscricoes = await this.eventsService.findMyRegistrations(req.user.id);
 
     return {
       success: true,
@@ -75,16 +63,7 @@ export class EventsController {
   @Get(':id')
   @ApiOperation({ summary: 'Buscar evento por ID' })
   async findOne(@Param('id') id: string) {
-    const evento = await this.prisma.evento.findUnique({
-      where: { id },
-      include: {
-        inscricoes: true,
-      },
-    });
-
-    if (!evento) {
-      return { success: false, message: 'Evento não encontrado' };
-    }
+    const evento = await this.eventsService.findOne(id);
 
     return {
       success: true,
@@ -97,31 +76,12 @@ export class EventsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar novo evento' })
   async create(@Body() createEventoDto: CreateEventoDto) {
-    try {
-      const evento = await this.prisma.evento.create({
-        data: {
-          titulo: createEventoDto.titulo,
-          descricao: createEventoDto.descricao,
-          data: new Date(createEventoDto.data),
-          horaInicio: createEventoDto.horaInicio,
-          horaFim: createEventoDto.horaFim,
-          local: createEventoDto.local,
-          categoria: createEventoDto.categoria,
-          online: createEventoDto.online || false,
-          preco: parseFloat(createEventoDto.preco as unknown as string) || 0,
-          vagas: parseInt(createEventoDto.vagas as unknown as string) || 0,
-          imagem: createEventoDto.imagem,
-          ativo: true,
-        },
-      });
+    const evento = await this.eventsService.create(createEventoDto);
 
-      return {
-        success: true,
-        evento,
-      };
-    } catch {
-      return { success: false, message: 'Erro ao criar evento' };
-    }
+    return {
+      success: true,
+      evento,
+    };
   }
 
   @Patch(':id')
@@ -132,38 +92,12 @@ export class EventsController {
     @Param('id') id: string,
     @Body() updateEventoDto: UpdateEventoDto,
   ) {
-    try {
-      const evento = await this.prisma.evento.update({
-        where: { id },
-        data: {
-          titulo: updateEventoDto.titulo,
-          descricao: updateEventoDto.descricao,
-          data: updateEventoDto.data
-            ? new Date(updateEventoDto.data)
-            : undefined,
-          horaInicio: updateEventoDto.horaInicio,
-          horaFim: updateEventoDto.horaFim,
-          local: updateEventoDto.local,
-          categoria: updateEventoDto.categoria,
-          online: updateEventoDto.online,
-          preco: updateEventoDto.preco
-            ? parseFloat(updateEventoDto.preco as unknown as string)
-            : undefined,
-          vagas: updateEventoDto.vagas
-            ? parseInt(updateEventoDto.vagas as unknown as string)
-            : undefined,
-          imagem: updateEventoDto.imagem,
-          ativo: updateEventoDto.ativo,
-        },
-      });
+    const evento = await this.eventsService.update(id, updateEventoDto);
 
-      return {
-        success: true,
-        evento,
-      };
-    } catch {
-      return { success: false, message: 'Erro ao atualizar evento' };
-    }
+    return {
+      success: true,
+      evento,
+    };
   }
 
   @Delete(':id')
@@ -171,18 +105,12 @@ export class EventsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Excluir evento' })
   async remove(@Param('id') id: string) {
-    try {
-      await this.prisma.evento.delete({
-        where: { id },
-      });
+    await this.eventsService.remove(id);
 
-      return {
-        success: true,
-        message: 'Evento excluído com sucesso',
-      };
-    } catch {
-      return { success: false, message: 'Erro ao excluir evento' };
-    }
+    return {
+      success: true,
+      message: 'Evento excluído com sucesso',
+    };
   }
 
   @Post(':id/inscrever')
@@ -190,53 +118,28 @@ export class EventsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Inscrever-se em um evento' })
   async register(@Param('id') id: string, @Request() req: JwtRequest) {
-    try {
-      const evento = await this.prisma.evento.findUnique({
-        where: { id },
-        include: {
-          inscricoes: true,
-        },
-      });
+    const evento = await this.eventsService.findOne(id);
 
-      if (!evento) {
-        return { success: false, message: 'Evento não encontrado' };
-      }
-
-      if (!evento.ativo) {
-        return { success: false, message: 'Evento inativo' };
-      }
-
-      // Verificar se já está inscrito
-      const jaInscrito = evento.inscricoes.some(
-        (i) => i.usuarioId === req.user.id,
-      );
-
-      if (jaInscrito) {
-        return { success: false, message: 'Já inscrito neste evento' };
-      }
-
-      // Verificar vagas
-      if (evento.vagas > 0 && evento.inscricoes.length >= evento.vagas) {
-        return { success: false, message: 'Evento lotado' };
-      }
-
-      const inscricao = await this.prisma.inscricaoEvento.create({
-        data: {
-          eventoId: id,
-          usuarioId: req.user.id,
-          nome: req.user.nome,
-          email: req.user.email,
-        },
-      });
-
-      return {
-        success: true,
-        inscricao,
-        message: 'Inscrição realizada com sucesso',
-      };
-    } catch {
-      return { success: false, message: 'Erro ao se inscrever' };
+    if (!evento.ativo) {
+      return { success: false, message: 'Evento inativo' };
     }
+
+    if (evento.vagas > 0 && evento.inscricoes.length >= evento.vagas) {
+      return { success: false, message: 'Evento lotado' };
+    }
+
+    const inscricao = await this.eventsService.subscribe(
+      id,
+      req.user.id,
+      req.user.nome,
+      req.user.email,
+    );
+
+    return {
+      success: true,
+      inscricao,
+      message: 'Inscrição realizada com sucesso',
+    };
   }
 
   @Delete(':id/cancelar')
@@ -247,29 +150,12 @@ export class EventsController {
     @Param('id') id: string,
     @Request() req: JwtRequest,
   ) {
-    try {
-      const inscricao = await this.prisma.inscricaoEvento.findFirst({
-        where: {
-          eventoId: id,
-          usuarioId: req.user.id,
-        },
-      });
+    await this.eventsService.unsubscribe(id, req.user.id);
 
-      if (!inscricao) {
-        return { success: false, message: 'Inscrição não encontrada' };
-      }
-
-      await this.prisma.inscricaoEvento.delete({
-        where: { id: inscricao.id },
-      });
-
-      return {
-        success: true,
-        message: 'Inscrição cancelada com sucesso',
-      };
-    } catch {
-      return { success: false, message: 'Erro ao cancelar inscrição' };
-    }
+    return {
+      success: true,
+      message: 'Inscrição cancelada com sucesso',
+    };
   }
 
   @Get('categorias/list')
