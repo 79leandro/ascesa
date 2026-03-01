@@ -98,3 +98,4 @@ ALLOWED_ORIGINS=http://localhost:3000
 ## 📝 Licença
 
 Privado - Todos os direitos reservados
+# CI Test
