@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
@@ -27,6 +28,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // Configurar filtro global de exceções
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Configurar Swagger
   const config = new DocumentBuilder()

@@ -24,6 +24,7 @@ model Usuario {
   criadoEm      DateTime    @default(now()) @map("criado_em")
   atualizadoEm  DateTime    @updatedAt @map("atualizado_em")
   ultimoLogin   DateTime?   @map("ultimo_login")
+  deletadoEm    DateTime?   @map("deletado_em")
 
   // Relacionamentos
   associado         Associado?
@@ -34,6 +35,7 @@ model Usuario {
   historicosMembership HistoricoMembership[]
   pagamentos        Pagamento[]
 
+  @@index([deletadoEm])
   @@map("usuarios")
 }
 
@@ -139,6 +141,7 @@ model Beneficio {
   ordem           Int       @default(0) @map("ordem")
   criadoEm        DateTime  @default(now()) @map("criado_em")
   atualizadoEm    DateTime  @updatedAt @map("atualizado_em")
+  deletadoEm      DateTime? @map("deletado_em")
 
   // Relacionamentos
   parceiroId      String?   @map("parceiro_id")
@@ -148,6 +151,7 @@ model Beneficio {
   @@index([categoria])
   @@index([ativo, categoria])
   @@index([destacado, ativo])
+  @@index([deletadoEm])
   @@map("beneficios")
 }
 
@@ -170,12 +174,14 @@ model Parceiro {
   ativo           Boolean   @default(true) @map("ativo")
   criadoEm        DateTime  @default(now()) @map("criado_em")
   atualizadoEm    DateTime  @updatedAt @map("atualizado_em")
+  deletadoEm      DateTime? @map("deletado_em")
 
   // Relacionamentos
   beneficios      Beneficio[]
 
   @@index([categoria])
   @@index([status, ativo])
+  @@index([deletadoEm])
   @@map("parceiros")
 }
 
@@ -344,10 +350,12 @@ model Evento {
   inscricoes      InscricaoEvento[]
   criadoEm        DateTime  @default(now()) @map("criado_em")
   atualizadoEm    DateTime  @updatedAt @map("atualizado_em")
+  deletadoEm      DateTime? @map("deletado_em")
 
   @@index([data])
   @@index([categoria])
   @@index([ativo, data])
+  @@index([deletadoEm])
   @@map("eventos")
 }
 
