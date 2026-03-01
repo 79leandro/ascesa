@@ -2,9 +2,13 @@ name: CI
 
   on:
     push:
-      branches: [master, develop]
+      branches:
+        - master
+        - develop
     pull_request:
-      branches: [master, develop]
+      branches:
+        - master
+        - develop
 
   jobs:
     lint-and-test:
@@ -72,15 +76,3 @@ name: CI
         - name: Build Web
           working-directory: ./web
           run: npm run build
-
-        - name: Upload API build artifacts
-          uses: actions/upload-artifact@v4
-          with:
-            name: api-build
-            path: api/dist
-
-        - name: Upload Web build artifacts
-          uses: actions/upload-artifact@v4
-          with:
-            name: web-build
-            path: web/.next
