@@ -1,5 +1,7 @@
 // Configuração centralizada de endpoints da API
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ascesa.onrender.com';
+import { getApiUrl } from './config';
+
+const API_URL = getApiUrl();
 
 export const API_ENDPOINTS = {
   auth: {
