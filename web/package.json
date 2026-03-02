@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:local": "echo \"🔵 Executando LOCAL\" && NEXT_PUBLIC_USE_REMOTE_API=false next dev -p 3000",
-    "dev:remote": "echo \"🟢 Executando REMOTO\" && NEXT_PUBLIC_USE_REMOTE_API=true next dev -p 3000",
+    "dev:local": "node -e \"require('fs').writeFileSync('.env.local','NEXT_PUBLIC_USE_REMOTE_API=false\\nNEXT_PUBLIC_API_URL=http://localhost:3001\\n');console.log('🔵 Configurado para LOCAL')\" && next dev -p 3000",
+    "dev:remote": "node -e \"require('fs').writeFileSync('.env.local','NEXT_PUBLIC_USE_REMOTE_API=true\\nNEXT_PUBLIC_API_URL=https://ascesa.onrender.com\\n');console.log('🟢 Configurado para REMOTO')\" && next dev -p 3000",
     "build": "next build",
     "build:local": "NEXT_PUBLIC_USE_REMOTE_API=false next build",
     "build:remote": "NEXT_PUBLIC_USE_REMOTE_API=true next build",
