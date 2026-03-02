@@ -17,8 +17,9 @@
     "lint": "npm run lint --workspaces --if-present",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
-    "executar:local": "concurrently \"cd web && npm run dev:local\" \"cd api && npm run start:dev\"",
-    "executar:remoto": "concurrently \"cd web && npm run dev:remote\" \"cd api && npm run start:dev\""
+    "kill": "taskkill /F /IM node.exe 2>nul || echo Nenhum processo Node encontrado",
+    "executar:local": "npm run kill && concurrently \"cd web && npm run dev:local\" \"cd api && npm run start:dev\"",
+    "executar:remoto": "npm run kill && concurrently \"cd web && npm run dev:remote\" \"cd api && npm run start:dev\""
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
