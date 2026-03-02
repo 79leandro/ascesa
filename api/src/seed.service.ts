@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from './prisma/prisma.service';
+import { StatusUsuario } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -34,7 +35,7 @@ export class SeedService {
 
     await this.prisma.usuario.upsert({
       where: { email: adminEmail },
-      update: { senha: hashedPassword, papel: 'ADMIN', status: 'ATIVO' },
+      update: { senha: hashedPassword },
       create: {
         nome: 'Administrador',
         email: adminEmail,
@@ -42,7 +43,7 @@ export class SeedService {
         cpf: '00000000000',
         telefone: '00000000000',
         papel: 'ADMIN',
-        status: 'ATIVO',
+        status: StatusUsuario.ATIVO,
       },
     });
 
@@ -100,7 +101,7 @@ export class SeedService {
         nome: 'Pet Shop Amigo',
         slug: 'pet-shop-amigo',
         descricao: '15% de desconto em produtos',
-        categoria: 'LAZER',
+        categoria: 'PET',
         desconto: '15%',
         ativo: true,
         destacado: false,
@@ -108,10 +109,8 @@ export class SeedService {
     ];
 
     for (const benefit of benefits) {
-      await this.prisma.beneficio.upsert({
-        where: { slug: benefit.slug },
-        update: benefit,
-        create: benefit,
+      await this.prisma.beneficio.create({
+        data: benefit,
       });
     }
 
@@ -122,7 +121,6 @@ export class SeedService {
     const partners = [
       {
         nome: 'Drogaria Popular',
-        slug: 'drogaria-popular',
         cnpj: '12345678000100',
         telefone: '(31) 1234-5678',
         email: 'contato@drogariapopular.com.br',
@@ -130,10 +128,10 @@ export class SeedService {
         categoria: 'SAUDE',
         desconto: '20%',
         status: 'ATIVO',
+        ativo: true,
       },
       {
         nome: 'Supermercado Premier',
-        slug: 'supermercado-premier',
         cnpj: '12345678000200',
         telefone: '(31) 2345-6789',
         email: 'contato@supermercadopremier.com.br',
@@ -141,10 +139,10 @@ export class SeedService {
         categoria: 'COMPRAS',
         desconto: '15%',
         status: 'ATIVO',
+        ativo: true,
       },
       {
         nome: 'Escola Sonho',
-        slug: 'escola-sonho',
         cnpj: '12345678000300',
         telefone: '(31) 3456-7890',
         email: 'contato@escolasonho.com.br',
@@ -152,14 +150,13 @@ export class SeedService {
         categoria: 'EDUCACAO',
         desconto: '30%',
         status: 'ATIVO',
+        ativo: true,
       },
     ];
 
     for (const partner of partners) {
-      await this.prisma.parceiro.upsert({
-        where: { slug: partner.slug },
-        update: partner,
-        create: partner,
+      await this.prisma.parceiro.create({
+        data: partner,
       });
     }
 
@@ -170,51 +167,53 @@ export class SeedService {
     const events = [
       {
         titulo: 'Workshop de Finanças Pessoais',
-        slug: 'workshop-financas-pessoais',
         descricao: 'Aprenda a gerenciar suas finanças',
         data: new Date('2024-02-15T14:00:00'),
+        horaInicio: '14:00',
+        horaFim: '16:00',
         local: 'Online - zoom',
         categoria: 'WORKSHOP',
         vagas: 50,
-        status: 'ATIVO',
+        ativo: true,
       },
       {
         titulo: 'Happy Hour dos Associados',
-        slug: 'happy-hour-associados',
         descricao: 'Encontro mensal para networking',
         data: new Date('2024-02-20T19:00:00'),
+        horaInicio: '19:00',
+        horaFim: '22:00',
         local: 'Bar Central - Centro',
         categoria: 'SOCIAL',
         vagas: 100,
-        status: 'ATIVO',
+        ativo: true,
       },
       {
         titulo: 'Palestra: Saúde Mental',
-        slug: 'palestra-saude-mental',
         descricao: 'Importância da saúde mental',
         data: new Date('2024-03-01T10:00:00'),
+        horaInicio: '10:00',
+        horaFim: '12:00',
         local: 'Auditório ASCESA',
         categoria: 'PALESTRA',
         vagas: 80,
-        status: 'ATIVO',
+        ativo: true,
       },
       {
         titulo: 'Assembleia Geral Ordinária',
-        slug: 'assembleia-2024',
         descricao: 'Prestação de contas',
         data: new Date('2024-03-15T14:00:00'),
+        horaInicio: '14:00',
+        horaFim: '18:00',
         local: 'Sede ASCESA',
         categoria: 'ASSEMBLEIA',
         vagas: 200,
-        status: 'ATIVO',
+        ativo: true,
       },
     ];
 
     for (const event of events) {
-      await this.prisma.evento.upsert({
-        where: { titulo: event.titulo },
-        update: event,
-        create: event,
+      await this.prisma.evento.create({
+        data: event,
       });
     }
 
@@ -229,7 +228,7 @@ export class SeedService {
         cpf: '12345678901',
         telefone: '(31) 99999-0001',
         password: 'joao123',
-        status: 'ATIVO',
+        status: StatusUsuario.ATIVO,
       },
       {
         email: 'maria.santos@email.com',
@@ -237,7 +236,7 @@ export class SeedService {
         cpf: '23456789012',
         telefone: '(31) 99999-0002',
         password: 'maria123',
-        status: 'ATIVO',
+        status: StatusUsuario.ATIVO,
       },
       {
         email: 'pedro.oliveira@email.com',
@@ -245,7 +244,7 @@ export class SeedService {
         cpf: '34567890123',
         telefone: '(31) 99999-0003',
         password: 'pedro123',
-        status: 'ATIVO',
+        status: StatusUsuario.PENDENTE,
       },
     ];
 
@@ -266,10 +265,8 @@ export class SeedService {
         },
       });
 
-      await this.prisma.associado.upsert({
-        where: { usuarioId: createdUser.id },
-        update: {},
-        create: {
+      await this.prisma.associado.create({
+        data: {
           usuarioId: createdUser.id,
           cpf: user.cpf,
           dataNascimento: new Date('1990-01-01'),
