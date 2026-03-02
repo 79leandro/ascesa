@@ -16,7 +16,9 @@
     "start:api": "cd api && npm run start:prod",
     "lint": "npm run lint --workspaces --if-present",
     "docker:up": "docker-compose up -d",
-    "docker:down": "docker-compose down"
+    "docker:down": "docker-compose down",
+    "executar:local": "concurrently \"npm run dev:local\" \"cd api && npm run start:dev\"",
+    "executar:remoto": "concurrently \"npm run dev:remote\" \"cd api && npm run start:dev\""
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

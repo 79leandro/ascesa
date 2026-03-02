@@ -37,6 +37,17 @@ export function getApiConfig(): ApiConfig {
       : 'http://localhost:3001'
   );
 
+  // Mostrar no console qual modo está ativo
+  if (typeof window !== 'undefined') {
+    console.log(
+      useRemote
+        ? '%c🟢 API REMOTA - https://ascesa.onrender.com'
+        : '%c🔵 API LOCAL - http://localhost:3001',
+      'color: #10B981; font-size: 12px; font-weight: bold;',
+      'background: #f0f0f0; padding: 4px 8px; border-radius: 4px;'
+    );
+  }
+
   return {
     mode: useRemote ? 'remote' : 'local',
     apiUrl,

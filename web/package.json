@@ -4,8 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:local": "echo \"🔵 Executando LOCAL\" && NEXT_PUBLIC_USE_REMOTE_API=false next dev -p 3000",
+    "dev:remote": "echo \"🟢 Executando REMOTO\" && NEXT_PUBLIC_USE_REMOTE_API=true next dev -p 3000",
     "build": "next build",
+    "build:local": "NEXT_PUBLIC_USE_REMOTE_API=false next build",
+    "build:remote": "NEXT_PUBLIC_USE_REMOTE_API=true next build",
     "start": "next start",
+    "start:local": "NEXT_PUBLIC_USE_REMOTE_API=false next start -p 3000",
+    "start:remote": "NEXT_PUBLIC_USE_REMOTE_API=true next start -p 3000",
     "lint": "eslint"
   },
   "dependencies": {
