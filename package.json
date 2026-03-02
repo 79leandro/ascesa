@@ -19,7 +19,10 @@
     "docker:down": "docker-compose down",
     "kill": "taskkill /F /IM node.exe 2>nul || echo Nenhum processo Node encontrado",
     "executar:local": "npm run kill && concurrently \"cd web && npm run dev:local\" \"cd api && npm run start:dev\"",
-    "executar:remoto": "npm run kill && concurrently \"cd web && npm run dev:remote\" \"cd api && npm run start:dev\""
+    "executar:remoto": "npm run kill && concurrently \"cd web && npm run dev:remote\" \"cd api && npm run start:dev\"",
+    "carga": "node scripts/carga.js",
+    "carga:local": "npm run kill && npm run install && node -e \"require('fs').writeFileSync('web/.env.local','NEXT_PUBLIC_USE_REMOTE_API=false\\nNEXT_PUBLIC_API_URL=http://localhost:3001\\n')\" && concurrently \"cd web && npm run dev\" \"cd api && npm run start:dev\"",
+    "carga:remoto": "npm run kill && npm run install && node -e \"require('fs').writeFileSync('web/.env.local','NEXT_PUBLIC_USE_REMOTE_API=true\\nNEXT_PUBLIC_API_URL=https://ascesa.onrender.com\\n')\" && concurrently \"cd web && npm run dev\" \"cd api && npm run start:dev\""
   },
   "devDependencies": {
     "concurrently": "^9.0.0"
