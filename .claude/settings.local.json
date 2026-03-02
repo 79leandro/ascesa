@@ -44,7 +44,12 @@
       "WebFetch(domain:www.uxpin.com)",
       "Bash(npx prisma generate --skip-generate)",
       "Bash(git fetch:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm run test)",
+      "Bash(npm run test -- --coverage)",
+      "Bash(npx prisma db seed)",
+      "Bash(vercel:*)"
     ]
   }
 }
