@@ -9,12 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { API_ENDPOINTS, APP_ROUTES } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuthContext';
 import { perf } from '@/lib/performance';
+import { useToast } from '@/components/ui/toast';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, user } = useAuth();
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -34,7 +35,6 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     perf.start('login submit');
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
@@ -43,6 +43,7 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           email: formData.email,
           password: formData.password,
@@ -52,14 +53,14 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        // login function already handles redirect
         login(data.accessToken, data.user);
+        addToast('Login realizado com sucesso!', 'success');
       } else {
-        setError(data.message || 'Erro ao fazer login');
+        addToast(data.message || 'Erro ao fazer login', 'error');
         setLoading(false);
       }
     } catch {
-      setError('Erro ao conectar com o servidor');
+      addToast('Erro ao conectar com o servidor. Verifique sua conexão.', 'error');
       setLoading(false);
     }
     perf.end('login submit');
@@ -76,11 +77,6 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
-                {error}
-              </div>
-            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input
                 label="Email"

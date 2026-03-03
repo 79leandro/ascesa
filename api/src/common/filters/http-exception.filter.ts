@@ -7,6 +7,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { ErrorMessages } from '../messages/error-messages';
+import { formatValidationErrors, getPrismaErrorMessage } from '../messages/error-helpers';
+import { Prisma } from '@prisma/client';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -18,27 +21,53 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Erro interno do servidor';
+    let message = ErrorMessages.SERVER.INTERNAL_ERROR;
     let errors: any = undefined;
 
+    // Erros HTTP (inclui validation errors do class-validator)
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
       if (typeof exceptionResponse === 'object') {
         const resp = exceptionResponse as any;
-        message = resp.message || exception.message;
-        errors = resp.errors;
+
+        // Erros de validação do class-validator
+        if (resp.message && Array.isArray(resp.message)) {
+          const formattedMessages = formatValidationErrors(resp.message);
+          message = formattedMessages[0] || ErrorMessages.VALIDATION.REQUIRED_FIELD;
+          errors = formattedMessages;
+        } else if (resp.message && typeof resp.message === 'string') {
+          message = this.makeUserFriendly(resp.message);
+        } else {
+          message = exception.message;
+        }
+
+        errors = resp.errors || errors;
       } else {
-        message = exceptionResponse as string;
+        message = this.makeUserFriendly(exceptionResponse as string);
       }
-    } else if (exception instanceof Error) {
-      message = exception.message;
+    }
+    // Erros do Prisma
+    else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      message = getPrismaErrorMessage(exception);
+      status = HttpStatus.BAD_REQUEST;
+      this.logError(request, exception);
+    }
+    // Erros do Prisma - Query engine
+    else if (exception instanceof Prisma.PrismaClientInitializationError) {
+      message = ErrorMessages.SERVER.DATABASE_ERROR;
+      status = HttpStatus.SERVICE_UNAVAILABLE;
+      this.logError(request, exception);
+    }
+    // Outros erros
+    else if (exception instanceof Error) {
+      message = this.makeUserFriendly(exception.message);
 
       // Não expor detalhes de erros em produção
       if (process.env.NODE_ENV === 'development') {
         this.logger.error(
-          `${request.method} ${request.url}`,
+          `${request.method} ${request.url} - ${exception.message}`,
           exception.stack,
         );
       }
@@ -48,7 +77,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       success: false,
       statusCode: status,
       message,
-      errors,
+      errors: errors?.length ? errors : undefined,
       timestamp: new Date().toISOString(),
       path: request.url,
     };
@@ -59,5 +88,44 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     response.status(status).json(errorResponse);
+  }
+
+  /**
+   * Converte mensagens técnicas em mensagens amigáveis
+   */
+  private makeUserFriendly(message: string): string {
+    // Credenciais inválidas
+    if (message.includes('invalid credentials') || message.includes('Unauthorized')) {
+      return ErrorMessages.AUTH.INVALID_CREDENTIALS;
+    }
+
+    // Token inválido
+    if (message.includes('jwt') || message.includes('token')) {
+      return ErrorMessages.AUTH.INVALID_TOKEN;
+    }
+
+    // Erro de banco de dados
+    if (message.includes('database') || message.includes('prisma')) {
+      return ErrorMessages.SERVER.DATABASE_ERROR;
+    }
+
+    // Erro de conexão
+    if (message.includes('connect') || message.includes('ECONNREFUSED')) {
+      return ErrorMessages.SERVER.EXTERNAL_SERVICE_ERROR;
+    }
+
+    // Retorna a mensagem original se não houver mapeamento
+    return message;
+  }
+
+  private logError(request: Request, error: any) {
+    if (process.env.NODE_ENV === 'development') {
+      this.logger.error(
+        `${request.method} ${request.url} - ${error.message}`,
+        error.stack,
+      );
+    } else {
+      this.logger.error(`${request.method} ${request.url} - ${error.code}`);
+    }
   }
 }

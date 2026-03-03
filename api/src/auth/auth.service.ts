@@ -16,6 +16,7 @@ import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AUTH_CONSTANTS } from '../common/constants';
+import { ErrorMessages } from '../common/messages/error-messages';
 
 /**
  * Payload do JWT
@@ -80,7 +81,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email já cadastrado');
+      throw new ConflictException(ErrorMessages.AUTH.EMAIL_ALREADY_EXISTS);
     }
 
     // Verificar se CPF já está em uso
@@ -89,7 +90,7 @@ export class AuthService {
         where: { cpf },
       });
       if (existingCpf) {
-        throw new ConflictException('CPF já cadastrado');
+        throw new ConflictException(ErrorMessages.ASSOCIATE.CPF_ALREADY_EXISTS);
       }
     }
 
@@ -161,23 +162,27 @@ export class AuthService {
     });
 
     if (!usuario) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException(ErrorMessages.AUTH.INVALID_CREDENTIALS);
     }
 
     // Verificar senha
     const isPasswordValid = await bcrypt.compare(password, usuario.senha);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException(ErrorMessages.AUTH.INVALID_CREDENTIALS);
     }
 
     // Verificar status (admin pode login mesmo pendente)
     if (usuario.status === 'PENDENTE' && usuario.papel !== 'ADMIN') {
-      throw new UnauthorizedException('Conta pendente de aprovação');
+      throw new UnauthorizedException(ErrorMessages.AUTH.ACCOUNT_PENDING);
+    }
+
+    if (usuario.status === 'INATIVO') {
+      throw new UnauthorizedException(ErrorMessages.AUTH.ACCOUNT_INACTIVE);
     }
 
     if (usuario.status === 'SUSPENSO') {
-      throw new UnauthorizedException('Conta suspensa');
+      throw new UnauthorizedException('Sua conta está suspensa. Entre em contato com o administrador.');
     }
 
     // Atualizar último login
