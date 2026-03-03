@@ -10,7 +10,7 @@ interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
 export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
   ({ className, variant = 'rectangular', ...props }, ref) => {
     const variants = {
-      text: 'h-4 w-full rounded',
+      text: 'h-4 w-full rounded-md',
       circular: 'rounded-full',
       rectangular: 'rounded-lg',
     };
@@ -19,7 +19,7 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
       <div
         ref={ref}
         className={cn(
-          'animate-pulse bg-[var(--gray-200)] dark:bg-[var(--gray-700)]',
+          'animate-pulse bg-gradient-to-r from-[var(--gray-200)] via-[var(--gray-100)] to-[var(--gray-200)] bg-[length:200%_100%]',
           variants[variant],
           className
         )}
@@ -33,8 +33,8 @@ Skeleton.displayName = 'Skeleton';
 
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="w-full space-y-3">
-      <div className="flex gap-4 p-4 bg-[var(--gray-50)] rounded-t-lg">
+    <div className="w-full space-y-2">
+      <div className="flex gap-4 p-4 bg-gradient-to-r from-[var(--gray-50)] to-[var(--gray-100)] rounded-t-xl border-b-2 border-[var(--border)]">
         <Skeleton className="h-4 flex-1" />
         <Skeleton className="h-4 flex-1" />
         <Skeleton className="h-4 w-24" />
@@ -42,7 +42,7 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
         <Skeleton className="h-4 w-16" />
       </div>
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex gap-4 p-4 border-b border-[var(--border)]">
+        <div key={i} className="flex gap-4 p-4 border-b border-[var(--border)] hover:bg-[var(--gray-50)]/50 transition-colors">
           <Skeleton className="h-4 flex-1" />
           <Skeleton className="h-4 flex-1" />
           <Skeleton className="h-4 w-24" />
@@ -56,7 +56,7 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
 
 export function CardSkeleton() {
   return (
-    <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 space-y-4">
+    <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 space-y-4 shadow-sm">
       <Skeleton className="h-6 w-1/3" />
       <Skeleton className="h-4 w-full" />
       <Skeleton className="h-4 w-2/3" />

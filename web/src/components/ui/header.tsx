@@ -15,7 +15,7 @@ export function Header({ links = [] }: HeaderProps) {
 
   if (isLoading) {
     return (
-      <header className="sticky top-0 z-50 w-full bg-[var(--primary)]">
+      <header className="sticky top-0 z-50 w-full bg-[var(--primary)] shadow-lg">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center space-x-2">
             <img
@@ -34,7 +34,7 @@ export function Header({ links = [] }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[var(--primary)]">
+    <header className="sticky top-0 z-50 w-full bg-[var(--primary)] shadow-lg">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
           <img
@@ -49,7 +49,7 @@ export function Header({ links = [] }: HeaderProps) {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-white transition-colors hover:text-[var(--accent)]"
+              className="text-sm font-medium text-white/90 transition-all duration-200 hover:text-[var(--accent)] hover:scale-105"
             >
               {link.label}
             </Link>
@@ -65,14 +65,14 @@ export function Header({ links = [] }: HeaderProps) {
                 </span>
                 <Link
                   href={user.role === 'ADMIN' ? '/admin' : '/dashboard'}
-                  className="text-sm font-medium text-white hover:text-[var(--accent)] underline"
+                  className="text-sm font-medium text-white hover:text-[var(--accent)] underline underline-offset-4 transition-all duration-200 hover:scale-105"
                 >
                   Área do Associado
                 </Link>
               </div>
               <button
                 onClick={logout}
-                className="text-sm font-medium text-white hover:text-[var(--accent)]"
+                className="text-sm font-medium text-white/90 hover:text-[var(--accent)] transition-all duration-200 hover:scale-105"
               >
                 Sair
               </button>
@@ -81,13 +81,13 @@ export function Header({ links = [] }: HeaderProps) {
             <>
               <Link
                 href="/login"
-                className="text-sm font-medium text-white hover:text-[var(--accent)]"
+                className="text-sm font-medium text-white/90 hover:text-[var(--accent)] transition-all duration-200 hover:scale-105"
               >
                 Login
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-[var(--primary)] transition-colors hover:bg-[var(--gray-100)]"
+                className="inline-flex items-center justify-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-[var(--primary)] transition-all duration-200 hover:bg-[var(--gray-100)] hover:shadow-md hover:scale-105 active:scale-95"
               >
                 Associe-se
               </Link>

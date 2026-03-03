@@ -20,6 +20,7 @@ interface DataTableProps<T> {
   onSort?: (key: string) => void;
   loading?: boolean;
   emptyMessage?: string;
+  zebraStriping?: boolean;
   className?: string;
 }
 
@@ -32,29 +33,34 @@ export function DataTable<T>({
   onSort,
   loading = false,
   emptyMessage = 'Nenhum registro encontrado',
+  zebraStriping = false,
   className,
 }: DataTableProps<T>) {
   return (
-    <div className={cn('bg-[var(--card)] rounded-xl border border-[var(--border)] overflow-hidden', className)}>
+    <div className={cn('bg-[var(--card)] rounded-xl border border-[var(--border)] overflow-hidden shadow-sm', className)}>
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-[var(--gray-50)] border-b border-[var(--border)]">
-            <tr>
+          <thead>
+            <tr className="bg-gradient-to-r from-[var(--gray-50)] to-[var(--gray-100)] border-b-2 border-[var(--border)]">
               {columns.map((column) => (
                 <th
                   key={column.key}
                   className={cn(
-                    'px-6 py-3 text-left text-sm font-medium text-muted-foreground',
-                    column.sortable && 'cursor-pointer select-none hover:text-foreground',
+                    'px-6 py-4 text-left text-sm font-semibold text-[var(--gray-700)]',
+                    'transition-colors duration-200',
+                    column.sortable && 'cursor-pointer select-none hover:bg-[var(--gray-200)]',
                     column.className
                   )}
                   onClick={() => column.sortable && onSort?.(column.key)}
                 >
                   <div className="flex items-center gap-2">
                     {column.header}
-                    {column.sortable && sortKey === column.key && (
-                      <span className="text-[var(--primary)]">
-                        {sortDirection === 'asc' ? '↑' : '↓'}
+                    {column.sortable && (
+                      <span className={cn(
+                        'transition-transform duration-200',
+                        sortKey === column.key ? 'text-[var(--primary)]' : 'text-[var(--gray-400)]'
+                      )}>
+                        {sortKey === column.key ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}
                       </span>
                     )}
                   </div>
@@ -76,8 +82,15 @@ export function DataTable<T>({
                 </td>
               </tr>
             ) : (
-              data.map((row) => (
-                <tr key={String(row[keyField])} className="hover:bg-[var(--gray-50)] transition-colors">
+              data.map((row, index) => (
+                <tr
+                  key={String(row[keyField])}
+                  className={cn(
+                    'transition-all duration-200',
+                    'hover:bg-[var(--primary)]/5 hover:shadow-sm -mx-6 px-6',
+                    zebraStriping && index % 2 === 1 && 'bg-[var(--gray-50)]/50'
+                  )}
+                >
                   {columns.map((column) => (
                     <td key={column.key} className={cn('px-6 py-4 text-sm', column.className)}>
                       {column.cell ? column.cell(row) : String(row[column.key as keyof T] ?? '')}
@@ -121,7 +134,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
-        className="px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--gray-100)]"
+        className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--gray-100)] hover:shadow-sm"
       >
         Anterior
       </button>
@@ -130,10 +143,10 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
           key={page}
           onClick={() => onPageChange(page)}
           className={cn(
-            'px-3 py-1 rounded text-sm',
+            'min-w-[40px] px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200',
             page === currentPage
-              ? 'bg-[var(--primary)] text-white'
-              : 'hover:bg-[var(--gray-100)]'
+              ? 'bg-[var(--primary)] text-white shadow-sm hover:bg-[var(--primary-light)]'
+              : 'hover:bg-[var(--gray-100)] hover:shadow-sm'
           )}
         >
           {page}
@@ -142,7 +155,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
-        className="px-3 py-1 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--gray-100)]"
+        className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[var(--gray-100)] hover:shadow-sm"
       >
         Próxima
       </button>

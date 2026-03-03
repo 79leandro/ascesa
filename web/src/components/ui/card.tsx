@@ -1,20 +1,30 @@
 'use client';
 
 import { HTMLAttributes, forwardRef } from 'react';
+import { cn } from '@/lib/utils';
 
-interface CardProps extends HTMLAttributes<HTMLDivElement> {}
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
+  variant?: 'default' | 'elevated' | 'outlined';
+  hover?: boolean;
+}
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ className = '', children, ...props }, ref) => {
+  ({ className = '', variant = 'default', hover = false, children, ...props }, ref) => {
+    const variants = {
+      default: 'border-[var(--border)] shadow-sm',
+      elevated: 'border-transparent shadow-lg hover:shadow-xl',
+      outlined: 'border-[var(--border)] shadow-none',
+    };
+
     return (
       <div
         ref={ref}
-        className={`
-          rounded-xl border border-[var(--border)]
-          bg-[var(--card)] text-[var(--card-foreground)]
-          shadow-sm
-          ${className}
-        `}
+        className={cn(
+          'rounded-xl bg-[var(--card)] text-[var(--card-foreground)] transition-all duration-200',
+          variants[variant],
+          hover && 'hover:scale-[1.01] cursor-pointer',
+          className
+        )}
         {...props}
       >
         {children}
@@ -30,7 +40,7 @@ export const CardHeader = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={`flex flex-col space-y-1.5 p-6 ${className}`}
+        className={cn('flex flex-col space-y-1.5 p-6', className)}
         {...props}
       >
         {children}
@@ -46,7 +56,7 @@ export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadi
     return (
       <h3
         ref={ref}
-        className={`text-2xl font-semibold leading-none tracking-tight ${className}`}
+        className={cn('text-2xl font-semibold leading-none tracking-tight', className)}
         {...props}
       >
         {children}
@@ -62,7 +72,7 @@ export const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<H
     return (
       <p
         ref={ref}
-        className={`text-sm text-[var(--muted-foreground)] ${className}`}
+        className={cn('text-sm text-[var(--muted-foreground)]', className)}
         {...props}
       >
         {children}
@@ -76,7 +86,7 @@ CardDescription.displayName = 'CardDescription';
 export const CardContent = forwardRef<HTMLDivElement, CardProps>(
   ({ className = '', children, ...props }, ref) => {
     return (
-      <div ref={ref} className={`p-6 pt-0 ${className}`} {...props}>
+      <div ref={ref} className={cn('p-6 pt-0', className)} {...props}>
         {children}
       </div>
     );
@@ -90,7 +100,7 @@ export const CardFooter = forwardRef<HTMLDivElement, CardProps>(
     return (
       <div
         ref={ref}
-        className={`flex items-center p-6 pt-0 ${className}`}
+        className={cn('flex items-center p-6 pt-0', className)}
         {...props}
       >
         {children}

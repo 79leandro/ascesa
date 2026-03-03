@@ -52,15 +52,15 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
     };
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+          className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in"
           onClick={onClose}
         />
         <div
           ref={ref}
           className={cn(
-            'relative w-full mx-4 bg-[var(--card)] rounded-xl shadow-xl animate-scale-in',
+            'relative w-full bg-[var(--card)] rounded-2xl shadow-2xl animate-slide-up',
             sizes[size],
             className
           )}
@@ -69,13 +69,13 @@ export const Modal = forwardRef<HTMLDivElement, ModalProps>(
           {(title || showCloseButton) && (
             <div className="flex items-center justify-between p-6 border-b border-[var(--border)]">
               <div>
-                {title && <h2 className="text-xl font-semibold">{title}</h2>}
+                {title && <h2 className="text-xl font-semibold text-[var(--foreground)]">{title}</h2>}
                 {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
               </div>
               {showCloseButton && (
                 <button
                   onClick={onClose}
-                  className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                  className="text-muted-foreground hover:text-foreground transition-all duration-200 p-2 rounded-lg hover:bg-[var(--gray-100)] -mr-2 -mt-2"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 6 6 18" /><path d="m6 6 12 12" />
