@@ -1,12 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { API_ENDPOINTS } from '@/lib/api';
-import { useDebounce, useAdminAuth } from '@/hooks';
-import { AdminLayout, FilterBar, FormModal } from '@/components/admin';
+import { useDebounce, useAdminAuth, useToast } from '@/hooks';
+import { FilterBar, FormModal } from '@/components/admin';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TableSkeleton } from '@/components/ui/skeleton';
+import { DataTable, Column } from '@/components/ui/data-table';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 import { CATEGORIES } from '@/constants';
 
 interface Benefit {
@@ -25,11 +29,13 @@ const BENEFIT_CATEGORIES = CATEGORIES.benefits;
 
 export default function AdminBenefitsPage() {
   useAdminAuth();
+  const toast = useToast();
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [editingBenefit, setEditingBenefit] = useState<Benefit | null>(null);
   const [saving, setSaving] = useState(false);
@@ -61,6 +67,7 @@ export default function AdminBenefitsPage() {
       if (data.success) setBenefits(data.beneficios);
     } catch (error) {
       console.error('Error fetching benefits:', error);
+      toast.addToast('Erro ao carregar convênios', 'error');
     } finally {
       setLoading(false);
     }
@@ -84,12 +91,13 @@ export default function AdminBenefitsPage() {
         fetchBenefits();
         setShowModal(false);
         resetForm();
+        toast.addToast(editingBenefit ? 'Convênio atualizado com sucesso' : 'Convênio criado com sucesso', 'success');
       } else {
-        alert(data.message || 'Erro ao salvar benefício');
+        toast.addToast(data.message || 'Erro ao salvar benefício', 'error');
       }
     } catch (error) {
       console.error('Error saving benefit:', error);
-      alert('Erro ao salvar benefício');
+      toast.addToast('Erro ao salvar benefício', 'error');
     } finally {
       setSaving(false);
     }
@@ -103,23 +111,30 @@ export default function AdminBenefitsPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) fetchBenefits();
+      if (data.success) {
+        fetchBenefits();
+        toast.addToast('Status atualizado com sucesso', 'success');
+      }
     } catch (error) {
       console.error('Error toggling status:', error);
+      toast.addToast('Erro ao atualizar status', 'error');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir?')) return;
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(API_ENDPOINTS.beneficios.delete(id), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) fetchBenefits();
+      if (res.ok) {
+        fetchBenefits();
+        toast.addToast('Convênio excluído com sucesso', 'success');
+      }
     } catch (error) {
       console.error('Error deleting benefit:', error);
+      toast.addToast('Erro ao excluir convênio', 'error');
     }
   };
 
@@ -143,9 +158,7 @@ export default function AdminBenefitsPage() {
     setFormData({ nome: '', descricao: '', categoria: 'Saúde', nomeParceiro: '', desconto: '', ativo: true, destacado: false, ordem: 0 });
   };
 
-  const [statusFilter, setStatusFilter] = useState('all');
-
-  const filteredBenefits = benefits.filter((b) => {
+  const filteredBenefits = (benefits || []).filter((b) => {
     const matchesSearch = b.nome.toLowerCase().includes(search.toLowerCase()) || (b.nomeParceiro && b.nomeParceiro.toLowerCase().includes(search.toLowerCase()));
     const matchesCategory = categoryFilter === 'all' || b.categoria === categoryFilter;
     const matchesStatus = statusFilter === 'all' || (statusFilter === 'ATIVO' && b.ativo) || (statusFilter === 'INATIVO' && !b.ativo);
@@ -153,18 +166,58 @@ export default function AdminBenefitsPage() {
   });
 
   const filterOptions = [{ value: 'all', label: 'Todas as categorias' }, ...BENEFIT_CATEGORIES.map((c) => ({ value: c, label: c }))];
-
   const statusOptions = [
     { value: 'all', label: 'Todos os status' },
     { value: 'ATIVO', label: 'Ativo' },
     { value: 'INATIVO', label: 'Inativo' },
   ];
 
+  const columns: Column<Benefit>[] = [
+    { key: 'nome', header: 'Nome', sortable: true },
+    {
+      key: 'nomeParceiro',
+      header: 'Parceiro',
+      cell: (row) => row.nomeParceiro || '-',
+    },
+    {
+      key: 'categoria',
+      header: 'Categoria',
+      cell: (row) => <span className="px-2 py-1 bg-gray-100 rounded text-sm">{row.categoria}</span>,
+    },
+    {
+      key: 'desconto',
+      header: 'Desconto',
+      cell: (row) => row.desconto || '-',
+    },
+    {
+      key: 'ativo',
+      header: 'Status',
+      cell: (row) => <StatusBadge status={row.ativo ? 'ATIVO' : 'INATIVO'} onClick={() => handleToggleStatus(row)} />,
+    },
+    {
+      key: 'acoes',
+      header: 'Ações',
+      cell: (row) => (
+        <div className="flex gap-2">
+          <button onClick={() => openEditModal(row)} className="text-secondary hover:underline">Editar</button>
+          <button onClick={() => handleDelete(row.id)} className="text-red-500 hover:underline">Excluir</button>
+        </div>
+      ),
+    },
+  ];
+
+  if (!mounted) return null;
+
   return (
-    <AdminLayout
-      title="Gerenciar Convênios"
-      actions={<Button onClick={() => { resetForm(); setShowModal(true); }}>+ Novo Convênio</Button>}
-    >
+    <div className="space-y-6">
+      <PageHeader
+        title="Gerenciar Convênios"
+        actions={
+          <Button onClick={() => { resetForm(); setShowModal(true); }}>
+            + Novo Convênio
+          </Button>
+        }
+      />
       <FilterBar
         searchPlaceholder="Buscar convênios..."
         searchValue={search}
@@ -175,43 +228,22 @@ export default function AdminBenefitsPage() {
         ]}
       />
 
-      {!mounted || loading ? (
-        <div className="text-center py-12">Carregando...</div>
+      {loading ? (
+        <TableSkeleton rows={5} />
+      ) : filteredBenefits.length === 0 ? (
+        <EmptyState
+          title="Nenhum convênio encontrado"
+          description={search || categoryFilter !== 'all' || statusFilter !== 'all' ? 'Tente ajustar os filtros de busca' : 'Comece adicionando um novo convênio'}
+          actionLabel={!search && categoryFilter === 'all' && statusFilter === 'all' ? 'Adicionar Convênio' : undefined}
+          onAction={() => { resetForm(); setShowModal(true); }}
+        />
       ) : (
-        <div className="bg-white rounded-xl border border-[var(--border)] overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-[var(--gray-50)]">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium">Nome</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Parceiro</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Categoria</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Desconto</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBenefits.map((benefit) => (
-                <tr key={benefit.id} className="border-t border-[var(--border)]">
-                  <td className="px-6 py-4">{benefit.nome}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{benefit.nomeParceiro || '-'}</td>
-                  <td className="px-6 py-4"><span className="px-2 py-1 bg-gray-100 rounded text-sm">{benefit.categoria}</span></td>
-                  <td className="px-6 py-4">{benefit.desconto || '-'}</td>
-                  <td className="px-6 py-4">
-                    <StatusBadge status={benefit.ativo ? 'ATIVO' : 'INATIVO'} onClick={() => handleToggleStatus(benefit)} />
-                  </td>
-                  <td className="px-6 py-4">
-                    <button onClick={() => openEditModal(benefit)} className="text-secondary hover:underline mr-3">Editar</button>
-                    <button onClick={() => handleDelete(benefit.id)} className="text-red-500 hover:underline">Excluir</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          data={filteredBenefits}
+          columns={columns}
+          keyField="id"
+        />
       )}
-
-      {filteredBenefits.length === 0 && !loading && <div className="text-center py-12 text-muted-foreground">Nenhum convênio encontrado.</div>}
 
       <FormModal
         isOpen={showModal}
@@ -264,6 +296,6 @@ export default function AdminBenefitsPage() {
           </div>
         </div>
       </FormModal>
-    </AdminLayout>
+    </div>
   );
 }

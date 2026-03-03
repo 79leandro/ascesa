@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { API_ENDPOINTS } from '@/lib/api';
 import { useAdminAuth } from '@/hooks';
-import { AdminLayout } from '@/components/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/ui/page-header';
 
 interface ReportStats {
   totalAssociates: number;
@@ -27,7 +27,9 @@ export default function AdminReportsPage() {
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState('30');
   const [exporting, setExporting] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     fetchStats();
   }, [dateRange]);
@@ -139,38 +141,42 @@ export default function AdminReportsPage() {
     }).format(value || 0);
   };
 
+  if (!mounted) return null;
+
   if (loading || !reportData) {
     return (
-      <AdminLayout title="Relatórios">
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Relatórios</h1>
         <div className="text-center py-12">Carregando...</div>
-      </AdminLayout>
+      </div>
     );
   }
 
   const maxGrowth = Math.max(...reportData.monthlyGrowth.map(m => m.count));
 
   return (
-    <AdminLayout
-      title="Relatórios"
-      actions={
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => exportReport('associates')}
-            disabled={exporting}
-          >
-            {exporting ? 'Exportando...' : '📥 Exportar Associados'}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => exportReport('payments')}
-            disabled={exporting}
-          >
-            {exporting ? 'Exportando...' : '💳 Exportar Pagamentos'}
-          </Button>
-        </div>
-      }
-    >
+    <div className="space-y-6">
+      <PageHeader
+        title="Relatórios"
+        actions={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => exportReport('associates')}
+              disabled={exporting}
+            >
+              {exporting ? 'Exportando...' : '📥 Exportar Associados'}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => exportReport('payments')}
+              disabled={exporting}
+            >
+              {exporting ? 'Exportando...' : '💳 Exportar Pagamentos'}
+            </Button>
+          </div>
+        }
+      />
       {/* Filters */}
       <div className="flex gap-4 mb-6">
         <select
@@ -379,6 +385,6 @@ export default function AdminReportsPage() {
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
+    </div>
   );
 }

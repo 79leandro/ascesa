@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '@/lib/api';
-import { useDebounce, useAdminAuth } from '@/hooks';
-import { AdminLayout, FilterBar, FormModal } from '@/components/admin';
+import { useDebounce, useAdminAuth, useToast } from '@/hooks';
+import { FilterBar, FormModal } from '@/components/admin';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TableSkeleton } from '@/components/ui/skeleton';
+import { DataTable, Column } from '@/components/ui/data-table';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
 import { CATEGORIES } from '@/constants';
 
 interface Partner {
@@ -30,6 +34,7 @@ const PARTNER_CATEGORIES = CATEGORIES.partners;
 
 export default function AdminPartnersPage() {
   useAdminAuth();
+  const toast = useToast();
   const [partners, setPartners] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -55,8 +60,6 @@ export default function AdminPartnersPage() {
     ativo: true,
   });
 
-  const debouncedSearch = useDebounce(search);
-
   useEffect(() => {
     setMounted(true);
     fetchPartners();
@@ -72,6 +75,7 @@ export default function AdminPartnersPage() {
       if (data.success) setPartners(data.parceiros);
     } catch (error) {
       console.error('Error fetching partners:', error);
+      toast.addToast('Erro ao carregar parceiros', 'error');
     } finally {
       setLoading(false);
     }
@@ -100,12 +104,13 @@ export default function AdminPartnersPage() {
         fetchPartners();
         setShowModal(false);
         resetForm();
+        toast.addToast(editingPartner ? 'Parceiro atualizado com sucesso' : 'Parceiro criado com sucesso', 'success');
       } else {
-        alert(data.message || 'Erro ao salvar parceiro');
+        toast.addToast(data.message || 'Erro ao salvar parceiro', 'error');
       }
     } catch (error) {
       console.error('Error saving partner:', error);
-      alert('Erro ao salvar parceiro');
+      toast.addToast('Erro ao salvar parceiro', 'error');
     } finally {
       setSaving(false);
     }
@@ -119,23 +124,30 @@ export default function AdminPartnersPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) fetchPartners();
+      if (data.success) {
+        fetchPartners();
+        toast.addToast('Status atualizado com sucesso', 'success');
+      }
     } catch (error) {
       console.error('Error toggling status:', error);
+      toast.addToast('Erro ao atualizar status', 'error');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir?')) return;
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(API_ENDPOINTS.parceiros.delete(id), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) fetchPartners();
+      if (res.ok) {
+        fetchPartners();
+        toast.addToast('Parceiro excluído com sucesso', 'success');
+      }
     } catch (error) {
       console.error('Error deleting partner:', error);
+      toast.addToast('Erro ao excluir parceiro', 'error');
     }
   };
 
@@ -168,7 +180,7 @@ export default function AdminPartnersPage() {
     });
   };
 
-  const filteredPartners = partners.filter((p) => {
+  const filteredPartners = (partners || []).filter((p) => {
     const matchesSearch = p.nome.toLowerCase().includes(search.toLowerCase()) ||
       (p.cnpj && p.cnpj.includes(search)) ||
       (p.email && p.email.toLowerCase().includes(search.toLowerCase()));
@@ -189,11 +201,44 @@ export default function AdminPartnersPage() {
     { value: 'INATIVO', label: 'Inativo' },
   ];
 
+  const columns: Column<Partner>[] = [
+    { key: 'nome', header: 'Nome', sortable: true },
+    { key: 'cnpj', header: 'CNPJ', cell: (row) => row.cnpj || '-' },
+    {
+      key: 'categoria',
+      header: 'Categoria',
+      cell: (row) => <span className="px-2 py-1 bg-gray-100 rounded text-sm">{row.categoria}</span>,
+    },
+    { key: 'desconto', header: 'Desconto', cell: (row) => row.desconto || '-' },
+    {
+      key: 'status',
+      header: 'Status',
+      cell: (row) => <StatusBadge status={row.status} onClick={() => handleToggleStatus(row)} />,
+    },
+    {
+      key: 'acoes',
+      header: 'Ações',
+      cell: (row) => (
+        <div className="flex gap-2">
+          <button onClick={() => openEditModal(row)} className="text-secondary hover:underline">Editar</button>
+          <button onClick={() => handleDelete(row.id)} className="text-red-500 hover:underline">Excluir</button>
+        </div>
+      ),
+    },
+  ];
+
+  if (!mounted) return null;
+
   return (
-    <AdminLayout
-      title="Gerenciar Parceiros"
-      actions={<Button onClick={() => { resetForm(); setShowModal(true); }}>+ Novo Parceiro</Button>}
-    >
+    <div className="space-y-6">
+      <PageHeader
+        title="Gerenciar Parceiros"
+        actions={
+          <Button onClick={() => { resetForm(); setShowModal(true); }}>
+            + Novo Parceiro
+          </Button>
+        }
+      />
       <FilterBar
         searchPlaceholder="Buscar parceiros..."
         searchValue={search}
@@ -204,43 +249,22 @@ export default function AdminPartnersPage() {
         ]}
       />
 
-      {!mounted || loading ? (
-        <div className="text-center py-12">Carregando...</div>
+      {loading ? (
+        <TableSkeleton rows={5} />
+      ) : filteredPartners.length === 0 ? (
+        <EmptyState
+          title="Nenhum parceiro encontrado"
+          description={search || categoryFilter !== 'all' || statusFilter !== 'all' ? 'Tente ajustar os filtros de busca' : 'Comece adicionando um novo parceiro'}
+          actionLabel={!search && categoryFilter === 'all' && statusFilter === 'all' ? 'Adicionar Parceiro' : undefined}
+          onAction={() => { resetForm(); setShowModal(true); }}
+        />
       ) : (
-        <div className="bg-white rounded-xl border border-[var(--border)] overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-[var(--gray-50)]">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium">Nome</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">CNPJ</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Categoria</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Desconto</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPartners.map((partner) => (
-                <tr key={partner.id} className="border-t border-[var(--border)]">
-                  <td className="px-6 py-4">{partner.nome}</td>
-                  <td className="px-6 py-4 text-muted-foreground">{partner.cnpj || '-'}</td>
-                  <td className="px-6 py-4"><span className="px-2 py-1 bg-gray-100 rounded text-sm">{partner.categoria}</span></td>
-                  <td className="px-6 py-4">{partner.desconto || '-'}</td>
-                  <td className="px-6 py-4">
-                    <StatusBadge status={partner.status} onClick={() => handleToggleStatus(partner)} />
-                  </td>
-                  <td className="px-6 py-4">
-                    <button onClick={() => openEditModal(partner)} className="text-secondary hover:underline mr-3">Editar</button>
-                    <button onClick={() => handleDelete(partner.id)} className="text-red-500 hover:underline">Excluir</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          data={filteredPartners}
+          columns={columns}
+          keyField="id"
+        />
       )}
-
-      {filteredPartners.length === 0 && !loading && <div className="text-center py-12 text-muted-foreground">Nenhum parceiro encontrado.</div>}
 
       <FormModal
         isOpen={showModal}
@@ -323,6 +347,6 @@ export default function AdminPartnersPage() {
           </div>
         </div>
       </FormModal>
-    </AdminLayout>
+    </div>
   );
 }
