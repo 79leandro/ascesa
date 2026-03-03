@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { APP_ROUTES, api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { ConfirmModal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 
 interface Product {
   id: string;
@@ -25,9 +27,11 @@ interface Product {
 export default function ShowcasePage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { addToast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; productId: string | null }>({ isOpen: false, productId: null });
   const [search, setSearch] = useState('');
   const [showNewAd, setShowNewAd] = useState(false);
   const [newAd, setNewAd] = useState({
@@ -106,17 +110,25 @@ export default function ShowcasePage() {
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este produto?')) return;
+  const handleDeleteProduct = async () => {
+    if (!deleteConfirm.productId) return;
 
     try {
-      const response = await api.delete(`/showcase/${id}`);
+      const response = await api.delete(`/showcase/${deleteConfirm.productId}`);
       if (response.success) {
-        setProducts(products.filter(p => p.id !== id));
+        setProducts(products.filter(p => p.id !== deleteConfirm.productId));
+        addToast('Produto excluído com sucesso!', 'success');
       }
     } catch (error) {
       console.error('Error deleting product:', error);
+      addToast('Erro ao excluir produto', 'error');
+    } finally {
+      setDeleteConfirm({ isOpen: false, productId: null });
     }
+  };
+
+  const openDeleteConfirm = (id: string) => {
+    setDeleteConfirm({ isOpen: true, productId: id });
   };
 
   const contactSeller = (product: Product) => {
@@ -226,7 +238,7 @@ export default function ShowcasePage() {
                 </button>
                 {product.vendedor === user.name && (
                   <button
-                    onClick={() => handleDeleteProduct(product.id)}
+                    onClick={() => openDeleteConfirm(product.id)}
                     className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
                   >
                     🗑️
@@ -351,6 +363,16 @@ export default function ShowcasePage() {
           </Card>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, productId: null })}
+        onConfirm={handleDeleteProduct}
+        title="Excluir Produto"
+        message="Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="danger"
+      />
     </div>
   );
 }

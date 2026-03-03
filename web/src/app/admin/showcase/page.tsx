@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import { API_ENDPOINTS } from '@/lib/api';
 import { useAdminAuth, useDebounce } from '@/hooks';
-import { AdminLayout, FilterBar, FormModal } from '@/components/admin';
+import { FilterBar, FormModal } from '@/components/admin';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { ConfirmModal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 
 interface Product {
   id: string;
@@ -24,6 +26,7 @@ interface Product {
 
 export default function AdminShowcasePage() {
   useAdminAuth();
+  const { addToast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -32,6 +35,7 @@ export default function AdminShowcasePage() {
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; productId: string | null }>({ isOpen: false, productId: null });
   const [formData, setFormData] = useState({
     nome: '',
     descricao: '',
@@ -43,8 +47,11 @@ export default function AdminShowcasePage() {
     ativo: true,
   });
 
+  const [mounted, setMounted] = useState(false);
+
   const debouncedSearch = useDebounce(search);
 
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -83,12 +90,13 @@ export default function AdminShowcasePage() {
         fetchProducts();
         setShowModal(false);
         resetForm();
+        addToast(editingProduct ? 'Produto atualizado com sucesso!' : 'Produto criado com sucesso!', 'success');
       } else {
-        alert(data.message || 'Erro ao salvar produto');
+        addToast(data.message || 'Erro ao salvar produto', 'error');
       }
     } catch (error) {
       console.error('Error saving product:', error);
-      alert('Erro ao salvar produto');
+      addToast('Erro ao salvar produto', 'error');
     } finally {
       setSaving(false);
     }
@@ -109,18 +117,28 @@ export default function AdminShowcasePage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir?')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm.productId) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_ENDPOINTS.showcase.delete(id), {
+      const res = await fetch(API_ENDPOINTS.showcase.delete(deleteConfirm.productId), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) fetchProducts();
+      if (res.ok) {
+        fetchProducts();
+        addToast('Produto excluído com sucesso!', 'success');
+      }
     } catch (error) {
       console.error('Error deleting product:', error);
+      addToast('Erro ao excluir produto', 'error');
+    } finally {
+      setDeleteConfirm({ isOpen: false, productId: null });
     }
+  };
+
+  const openDeleteConfirm = (id: string) => {
+    setDeleteConfirm({ isOpen: true, productId: id });
   };
 
   const openEditModal = (product: Product) => {
@@ -146,7 +164,7 @@ export default function AdminShowcasePage() {
     });
   };
 
-  const filteredProducts = products.filter((p) => {
+  const filteredProducts = (products || []).filter((p) => {
     const matchesSearch = p.nome.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       p.vendedor?.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || p.categoria === categoryFilter;
@@ -172,11 +190,14 @@ export default function AdminShowcasePage() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0);
   };
 
+  if (!mounted) return null;
+
   return (
-    <AdminLayout
-      title="Gerenciar Vitrine Virtual"
-      actions={<Button onClick={() => { resetForm(); setShowModal(true); }}>+ Novo Anúncio</Button>}
-    >
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Gerenciar Vitrine Virtual</h1>
+        <Button onClick={() => { resetForm(); setShowModal(true); }}>+ Novo Anúncio</Button>
+      </div>
       <FilterBar
         searchPlaceholder="Buscar produtos..."
         searchValue={search}
@@ -219,7 +240,7 @@ export default function AdminShowcasePage() {
                   </td>
                   <td className="px-6 py-4">
                     <button onClick={() => openEditModal(product)} className="text-secondary hover:underline mr-3">Editar</button>
-                    <button onClick={() => handleDelete(product.id)} className="text-red-500 hover:underline">Excluir</button>
+                    <button onClick={() => openDeleteConfirm(product.id)} className="text-red-500 hover:underline">Excluir</button>
                   </td>
                 </tr>
               ))}
@@ -285,6 +306,16 @@ export default function AdminShowcasePage() {
           </div>
         </div>
       </FormModal>
-    </AdminLayout>
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, productId: null })}
+        onConfirm={handleDelete}
+        title="Excluir Produto"
+        message="Tem certeza que deseja excluir este produto? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="danger"
+      />
+    </div>
   );
 }

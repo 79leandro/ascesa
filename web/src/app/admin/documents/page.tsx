@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import { API_ENDPOINTS } from '@/lib/api';
 import { useAdminAuth, useDebounce } from '@/hooks';
-import { AdminLayout, FilterBar } from '@/components/admin';
+import { FilterBar } from '@/components/admin';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmModal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 
 interface Document {
   id: string;
@@ -24,11 +26,16 @@ interface Document {
 
 export default function AdminDocumentsPage() {
   useAdminAuth();
+  const { addToast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const [rejectConfirm, setRejectConfirm] = useState<{ isOpen: boolean; documentId: string | null }>({ isOpen: false, documentId: null });
+
+  useEffect(() => { setMounted(true); }, []);
 
   const debouncedSearch = useDebounce(search);
 
@@ -71,33 +78,41 @@ export default function AdminDocumentsPage() {
       const data = await res.json();
       if (data.success) {
         fetchDocuments();
-        alert('Documento aprovado com sucesso!');
+        addToast('Documento aprovado com sucesso!', 'success');
       } else {
-        alert(data.message || 'Erro ao aprovar documento');
+        addToast(data.message || 'Erro ao aprobar documento', 'error');
       }
     } catch (error) {
       console.error('Error approving document:', error);
+      addToast('Erro ao aprovar documento', 'error');
     }
   };
 
-  const handleReject = async (docId: string) => {
-    if (!confirm('Tem certeza que deseja rejeitar este documento?')) return;
+  const handleReject = async () => {
+    if (!rejectConfirm.documentId) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_ENDPOINTS.documents.reject(docId), {
+      const res = await fetch(API_ENDPOINTS.documents.reject(rejectConfirm.documentId), {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (data.success) {
         fetchDocuments();
-        alert('Documento rejeitado');
+        addToast('Documento rejeitado', 'info');
       } else {
-        alert(data.message || 'Erro ao rejeitar documento');
+        addToast(data.message || 'Erro ao rejeitar documento', 'error');
       }
     } catch (error) {
       console.error('Error rejecting document:', error);
+      addToast('Erro ao rejeitar documento', 'error');
+    } finally {
+      setRejectConfirm({ isOpen: false, documentId: null });
     }
+  };
+
+  const openRejectConfirm = (id: string) => {
+    setRejectConfirm({ isOpen: true, documentId: id });
   };
 
   const getTypeLabel = (type: string) => {
@@ -119,11 +134,14 @@ export default function AdminDocumentsPage() {
     { value: 'REJEITADO', label: 'Rejeitado' },
   ];
 
+  if (!mounted) return null;
+
   return (
-    <AdminLayout
-      title="Gerenciar Documentos"
-      actions={<span className="text-sm text-muted-foreground">{documents.length} documentos</span>}
-    >
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Gerenciar Documentos</h1>
+        <span className="text-sm text-muted-foreground">{(documents || []).length} documentos</span>
+      </div>
       <FilterBar
         searchPlaceholder="Buscar por nome, email ou nome do arquivo..."
         searchValue={search}
@@ -189,7 +207,7 @@ export default function AdminDocumentsPage() {
                             Aprovar
                           </button>
                           <button
-                            onClick={() => handleReject(doc.id)}
+                            onClick={() => openRejectConfirm(doc.id)}
                             className="text-red-500 hover:underline"
                           >
                             Rejeitar
@@ -246,7 +264,7 @@ export default function AdminDocumentsPage() {
                     <Button onClick={() => { handleApprove(selectedDocument.id); setSelectedDocument(null); }}>
                       Aprovar
                     </Button>
-                    <Button variant="outline" onClick={() => { handleReject(selectedDocument.id); setSelectedDocument(null); }}>
+                    <Button variant="outline" onClick={() => { openRejectConfirm(selectedDocument.id); setSelectedDocument(null); }}>
                       Rejeitar
                     </Button>
                   </>
@@ -259,6 +277,16 @@ export default function AdminDocumentsPage() {
           </Card>
         </div>
       )}
-    </AdminLayout>
+
+      <ConfirmModal
+        isOpen={rejectConfirm.isOpen}
+        onClose={() => setRejectConfirm({ isOpen: false, documentId: null })}
+        onConfirm={handleReject}
+        title="Rejeitar Documento"
+        message="Tem certeza que deseja rejeitar este documento?"
+        confirmLabel="Rejeitar"
+        variant="warning"
+      />
+    </div>
   );
 }

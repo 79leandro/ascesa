@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react';
 import { API_ENDPOINTS } from '@/lib/api';
 import { useAdminAuth, useDebounce } from '@/hooks';
-import { AdminLayout, FilterBar, FormModal } from '@/components/admin';
+import { FilterBar, FormModal } from '@/components/admin';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmModal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 
 interface Event {
   id: string;
@@ -27,6 +29,7 @@ interface Event {
 
 export default function AdminEventsPage() {
   useAdminAuth();
+  const { addToast } = useToast();
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -35,6 +38,8 @@ export default function AdminEventsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [saving, setSaving] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; eventId: string | null }>({ isOpen: false, eventId: null });
   const [formData, setFormData] = useState({
     titulo: '',
     descricao: '',
@@ -50,6 +55,8 @@ export default function AdminEventsPage() {
   });
 
   const debouncedSearch = useDebounce(search);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetchEvents();
@@ -89,12 +96,13 @@ export default function AdminEventsPage() {
         fetchEvents();
         setShowModal(false);
         resetForm();
+        addToast(editingEvent ? 'Evento atualizado com sucesso!' : 'Evento criado com sucesso!', 'success');
       } else {
-        alert(data.message || 'Erro ao salvar evento');
+        addToast(data.message || 'Erro ao salvar evento', 'error');
       }
     } catch (error) {
       console.error('Error saving event:', error);
-      alert('Erro ao salvar evento');
+      addToast('Erro ao salvar evento', 'error');
     } finally {
       setSaving(false);
     }
@@ -115,18 +123,28 @@ export default function AdminEventsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir?')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm.eventId) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_ENDPOINTS.events.delete(id), {
+      const res = await fetch(API_ENDPOINTS.events.delete(deleteConfirm.eventId), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) fetchEvents();
+      if (res.ok) {
+        fetchEvents();
+        addToast('Evento excluído com sucesso!', 'success');
+      }
     } catch (error) {
       console.error('Error deleting event:', error);
+      addToast('Erro ao excluir evento', 'error');
+    } finally {
+      setDeleteConfirm({ isOpen: false, eventId: null });
     }
+  };
+
+  const openDeleteConfirm = (id: string) => {
+    setDeleteConfirm({ isOpen: true, eventId: id });
   };
 
   const openEditModal = (event: Event) => {
@@ -155,7 +173,7 @@ export default function AdminEventsPage() {
     });
   };
 
-  const filteredEvents = events.filter((e) => {
+  const filteredEvents = (events || []).filter((e) => {
     const matchesSearch = e.titulo.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || e.categoria === categoryFilter;
     const matchesStatus = statusFilter === 'all' || (statusFilter === 'ATIVO' && e.ativo) || (statusFilter === 'INATIVO' && !e.ativo);
@@ -176,11 +194,14 @@ export default function AdminEventsPage() {
     { value: 'INATIVO', label: 'Inativo' },
   ];
 
+  if (!mounted) return null;
+
   return (
-    <AdminLayout
-      title="Gerenciar Eventos"
-      actions={<Button onClick={() => { resetForm(); setShowModal(true); }}>+ Novo Evento</Button>}
-    >
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Gerenciar Eventos</h1>
+        <Button onClick={() => { resetForm(); setShowModal(true); }}>+ Novo Evento</Button>
+      </div>
       <FilterBar
         searchPlaceholder="Buscar eventos..."
         searchValue={search}
@@ -222,7 +243,7 @@ export default function AdminEventsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <button onClick={() => openEditModal(event)} className="text-secondary hover:underline mr-3">Editar</button>
-                    <button onClick={() => handleDelete(event.id)} className="text-red-500 hover:underline">Excluir</button>
+                    <button onClick={() => openDeleteConfirm(event.id)} className="text-red-500 hover:underline">Excluir</button>
                   </td>
                 </tr>
               ))}
@@ -299,6 +320,16 @@ export default function AdminEventsPage() {
           </div>
         </div>
       </FormModal>
-    </AdminLayout>
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, eventId: null })}
+        onConfirm={handleDelete}
+        title="Excluir Evento"
+        message="Tem certeza que deseja excluir este evento? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="danger"
+      />
+    </div>
   );
 }

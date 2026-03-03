@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import { API_ENDPOINTS } from '@/lib/api';
 import { useAdminAuth, useDebounce } from '@/hooks';
-import { AdminLayout, FilterBar } from '@/components/admin';
+import { FilterBar } from '@/components/admin';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmModal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 
 interface Topic {
   id: string;
@@ -23,15 +25,20 @@ interface Topic {
 
 export default function AdminForumPage() {
   useAdminAuth();
+  const { addToast } = useToast();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; topicId: string | null }>({ isOpen: false, topicId: null });
+
+  const [mounted, setMounted] = useState(false);
 
   const debouncedSearch = useDebounce(search);
 
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     fetchTopics();
   }, []);
@@ -82,21 +89,31 @@ export default function AdminForumPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir?')) return;
+  const handleDelete = async () => {
+    if (!deleteConfirm.topicId) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(API_ENDPOINTS.forum.delete(id), {
+      const res = await fetch(API_ENDPOINTS.forum.delete(deleteConfirm.topicId), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) fetchTopics();
+      if (res.ok) {
+        fetchTopics();
+        addToast('Tópico excluído com sucesso!', 'success');
+      }
     } catch (error) {
       console.error('Error deleting topic:', error);
+      addToast('Erro ao excluir tópico', 'error');
+    } finally {
+      setDeleteConfirm({ isOpen: false, topicId: null });
     }
   };
 
-  const filteredTopics = topics.filter((t) => {
+  const openDeleteConfirm = (id: string) => {
+    setDeleteConfirm({ isOpen: true, topicId: id });
+  };
+
+  const filteredTopics = (topics || []).filter((t) => {
     const matchesSearch = t.titulo.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
       t.autor?.toLowerCase().includes(debouncedSearch.toLowerCase());
     const matchesCategory = categoryFilter === 'all' || t.categoria === categoryFilter;
@@ -112,11 +129,14 @@ export default function AdminForumPage() {
     { value: 'Sugestões', label: 'Sugestões' },
   ];
 
+  if (!mounted) return null;
+
   return (
-    <AdminLayout
-      title="Gerenciar Fórum"
-      actions={<span className="text-sm text-muted-foreground">{filteredTopics.length} tópicos</span>}
-    >
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Gerenciar Fórum</h1>
+        <span className="text-sm text-muted-foreground">{(filteredTopics || []).length} tópicos</span>
+      </div>
       <FilterBar
         searchPlaceholder="Buscar tópicos..."
         searchValue={search}
@@ -168,7 +188,7 @@ export default function AdminForumPage() {
                       <button onClick={() => handleToggleLock(topic)} className="text-orange-600 hover:underline">
                         {topic.fechado ? 'Abrir' : 'Fechar'}
                       </button>
-                      <button onClick={() => handleDelete(topic.id)} className="text-red-500 hover:underline">Excluir</button>
+                      <button onClick={() => openDeleteConfirm(topic.id)} className="text-red-500 hover:underline">Excluir</button>
                     </div>
                   </td>
                 </tr>
@@ -213,6 +233,16 @@ export default function AdminForumPage() {
           </Card>
         </div>
       )}
-    </AdminLayout>
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, topicId: null })}
+        onConfirm={handleDelete}
+        title="Excluir Tópico"
+        message="Tem certeza que deseja excluir este tópico? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="danger"
+      />
+    </div>
   );
 }

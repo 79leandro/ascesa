@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { APP_ROUTES, api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { ConfirmModal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
 
 interface Topic {
   id: string;
@@ -33,6 +35,7 @@ interface Reply {
 export default function ForumPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
+  const { addToast } = useToast();
   const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
@@ -42,6 +45,7 @@ export default function ForumPage() {
   const [newTopicTitle, setNewTopicTitle] = useState('');
   const [newTopicContent, setNewTopicContent] = useState('');
   const [newTopicCategory, setNewTopicCategory] = useState('Geral');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; topicId: string | null }>({ isOpen: false, topicId: null });
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -125,20 +129,28 @@ export default function ForumPage() {
     fetchTopicDetail(topic.id);
   };
 
-  const handleDeleteTopic = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este tópico?')) return;
+  const handleDeleteTopic = async () => {
+    if (!deleteConfirm.topicId) return;
 
     try {
-      const response = await api.delete(`/forum/${id}`);
+      const response = await api.delete(`/forum/${deleteConfirm.topicId}`);
       if (response.success) {
-        setTopics(topics.filter(t => t.id !== id));
-        if (selectedTopic?.id === id) {
+        setTopics(topics.filter(t => t.id !== deleteConfirm.topicId));
+        if (selectedTopic?.id === deleteConfirm.topicId) {
           setSelectedTopic(null);
         }
+        addToast('Tópico excluído com sucesso!', 'success');
       }
     } catch (error) {
       console.error('Error deleting topic:', error);
+      addToast('Erro ao excluir tópico', 'error');
+    } finally {
+      setDeleteConfirm({ isOpen: false, topicId: null });
     }
+  };
+
+  const openDeleteConfirm = (id: string) => {
+    setDeleteConfirm({ isOpen: true, topicId: id });
   };
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'DIRECTOR';
@@ -215,7 +227,7 @@ export default function ForumPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteTopic(topic.id);
+                        openDeleteConfirm(topic.id);
                       }}
                       className="ml-4 text-red-500 hover:text-red-700"
                     >
@@ -369,6 +381,16 @@ export default function ForumPage() {
           </Card>
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deleteConfirm.isOpen}
+        onClose={() => setDeleteConfirm({ isOpen: false, topicId: null })}
+        onConfirm={handleDeleteTopic}
+        title="Excluir Tópico"
+        message="Tem certeza que deseja excluir este tópico? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        variant="danger"
+      />
     </div>
   );
 }
