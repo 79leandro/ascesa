@@ -105,6 +105,9 @@ export const API_ENDPOINTS = {
     sendReminder: (id: string) => `${API_URL}/payments/${id}/send-reminder`,
     updateOverdue: `${API_URL}/payments/update-overdue`,
   },
+  reports: {
+    dashboard: `${API_URL}/reports/dashboard`,
+  },
 } as const;
 
 export const APP_ROUTES = {

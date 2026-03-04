@@ -25,6 +25,7 @@ export default function AdminReportsPage() {
   useAdminAuth();
   const [reportData, setReportData] = useState<ReportStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingTime, setLoadingTime] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState('30');
   const [exporting, setExporting] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -35,49 +36,39 @@ export default function AdminReportsPage() {
   }, [dateRange]);
 
   const fetchStats = async () => {
+    const startTime = performance.now();
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
 
-      // Fetch associates stats
-      const associatesRes = await fetch(API_ENDPOINTS.associates.stats, {
+      // Fetch all stats in a single API call
+      const response = await fetch(API_ENDPOINTS.reports.dashboard, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const associatesData = await associatesRes.json();
+      const data = await response.json();
 
-      // Fetch payments stats
-      const paymentsRes = await fetch(API_ENDPOINTS.payments.stats, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const paymentsData = await paymentsRes.json();
+      const endTime = performance.now();
+      setLoadingTime(Math.round(endTime - startTime));
 
-      if (associatesData.success && paymentsData.success) {
-        const associatesStats = associatesData.data || {};
-        const paymentsStats = paymentsData.data || {};
+      if (data.success) {
+        const { associates, payments, monthlyGrowth } = data.data;
 
         setReportData({
-          totalAssociates: associatesStats.total || 0,
-          activeAssociates: associatesStats.ativos || 0,
-          pendingAssociates: associatesStats.pendentes || 0,
-          inactiveAssociates: associatesStats.inativos || 0,
-          newThisMonth: associatesStats.novosEsteMes || 0,
-          revenue: paymentsStats.totalPaid || 0,
-          averageAge: 38, // Would need separate endpoint for this
+          totalAssociates: associates?.total || 0,
+          activeAssociates: associates?.active || 0,
+          pendingAssociates: associates?.pending || 0,
+          inactiveAssociates: associates?.inactive || 0,
+          newThisMonth: associates?.newThisMonth || 0,
+          revenue: payments?.totalReceived || 0,
+          averageAge: 38,
           genderDistribution: { male: 620, female: 580, other: 34 },
           statusDistribution: {
-            active: associatesStats.ativos || 0,
-            pending: associatesStats.pendentes || 0,
-            inactive: associatesStats.inativos || 0,
+            active: associates?.active || 0,
+            pending: associates?.pending || 0,
+            inactive: associates?.inactive || 0,
             cancelled: 0,
           },
-          monthlyGrowth: [
-            { month: 'Set', count: 380 },
-            { month: 'Out', count: 420 },
-            { month: 'Nov', count: 450 },
-            { month: 'Dez', count: 480 },
-            { month: 'Jan', count: 510 },
-            { month: 'Fev', count: associatesStats.total || 0 },
-          ],
+          monthlyGrowth: monthlyGrowth || [],
           topBenefits: [
             { name: 'Descontos em Farmácias', activations: 456 },
             { name: 'Plano de Saúde', activations: 389 },
@@ -147,7 +138,15 @@ export default function AdminReportsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">Relatórios</h1>
-        <div className="text-center py-12">Carregando...</div>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)] mx-auto mb-4"></div>
+          <p className="text-[var(--muted-foreground)]">Carregando dados...</p>
+          {loadingTime && (
+            <p className="text-xs text-[var(--muted-foreground)] mt-2">
+              Tempo de resposta: {loadingTime}ms
+            </p>
+          )}
+        </div>
       </div>
     );
   }

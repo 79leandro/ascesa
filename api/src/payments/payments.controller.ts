@@ -108,7 +108,14 @@ export class PaymentsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter estatísticas de pagamentos' })
   async getStats() {
-    const [totalRecebido, totalPendente, totalAtrasado] = await Promise.all([
+    // Executar todas as queries em paralelo para melhor performance
+    const [
+      totalRecebido,
+      totalPendente,
+      totalAtrasado,
+      totalPendentes,
+      totalAtrasados,
+    ] = await Promise.all([
       this.prisma.pagamento.aggregate({
         where: { status: 'PAGO' },
         _sum: { valor: true },
@@ -121,21 +128,17 @@ export class PaymentsController {
         where: { status: 'ATRASADO' },
         _sum: { valor: true },
       }),
+      this.prisma.pagamento.count({
+        where: { status: 'PENDENTE' },
+      }),
+      this.prisma.pagamento.count({
+        where: { status: 'ATRASADO' },
+      }),
     ]);
-
-    const totalPendentes = await this.prisma.pagamento.count({
-      where: { status: 'PENDENTE' },
-    });
-
-    const totalAtrasados = await this.prisma.pagamento.count({
-      where: { status: 'ATRASADO' },
-    });
 
     const inadimplencia =
       totalPendentes + totalAtrasados > 0
-        ? ((totalAtrasados / (totalPendentes + totalAtrasados)) * 100).toFixed(
-            1,
-          )
+        ? ((totalAtrasados / (totalPendentes + totalAtrasados)) * 100).toFixed(1)
         : '0';
 
     return {
