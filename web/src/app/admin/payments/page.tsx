@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { API_ENDPOINTS } from '@/lib/api';
 import { useAdminAuth } from '@/hooks';
-import { AdminLayout } from '@/components/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -34,7 +33,9 @@ export default function AdminPaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [mounted, setMounted] = useState(false);
 
+  useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     fetchPayments();
     fetchStats();
@@ -110,7 +111,7 @@ export default function AdminPaymentsPage() {
     }
   };
 
-  const filteredPayments = payments.filter(p => {
+  const filteredPayments = (payments || []).filter(p => {
     const matchesSearch = search === '' ||
       p.associateName.toLowerCase().includes(search.toLowerCase()) ||
       p.associateEmail.toLowerCase().includes(search.toLowerCase());
@@ -120,8 +121,11 @@ export default function AdminPaymentsPage() {
 
   const { totalPaid, totalPending, totalOverdue, totalAmount } = stats;
 
+  if (!mounted) return null;
+
   return (
-    <AdminLayout title="Controle de Pagamentos">
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Controle de Pagamentos</h1>
       <div className="grid grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="pt-4">
@@ -220,6 +224,6 @@ export default function AdminPaymentsPage() {
           </CardContent>
         </Card>
       )}
-    </AdminLayout>
+    </div>
   );
 }
