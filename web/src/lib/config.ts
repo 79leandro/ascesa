@@ -13,6 +13,8 @@
  *
  * Alternativamente, você pode usar apenas NEXT_PUBLIC_API_URL
  * que terá prioridade sobre USE_REMOTE_API
+ *
+ * @updated 2026-03-08 - Trigger redeploy
  */
 
 export type ApiMode = 'local' | 'remote';
