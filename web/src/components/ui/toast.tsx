@@ -1,20 +1,22 @@
 'use client';
 
-import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
+type ToastPosition = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
 
 interface Toast {
   id: string;
   message: string;
   type: ToastType;
   duration?: number;
+  position?: ToastPosition;
 }
 
 interface ToastContextType {
   toasts: Toast[];
-  addToast: (message: string, type?: ToastType, duration?: number) => void;
+  addToast: (message: string, type?: ToastType, duration?: number, position?: ToastPosition) => void;
   removeToast: (id: string) => void;
 }
 
@@ -57,15 +59,30 @@ const colors = {
   info: 'bg-blue-500 text-white border-blue-600',
 };
 
+const positionClasses: Record<ToastPosition, string> = {
+  'top-right': 'top-4 right-4',
+  'top-left': 'top-4 left-4',
+  'bottom-right': 'bottom-4 right-4',
+  'bottom-left': 'bottom-4 left-4',
+  'top-center': 'top-4 left-1/2 -translate-x-1/2',
+  'bottom-center': 'bottom-4 left-1/2 -translate-x-1/2',
+};
+
+const animationClasses: Record<ToastPosition, string> = {
+  'top-right': 'animate-slide-down',
+  'top-left': 'animate-slide-down',
+  'bottom-right': 'animate-slide-up',
+  'bottom-left': 'animate-slide-up',
+  'top-center': 'animate-fade-in-up',
+  'bottom-center': 'animate-fade-in-up',
+};
+
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback((message: string, type: ToastType = 'info', duration = 4000) => {
+  const addToast = useCallback((message: string, type: ToastType = 'info', duration = 4000, position: ToastPosition = 'bottom-right') => {
     const id = Math.random().toString(36).substring(7);
-    setToasts((prev) => [...prev, { id, message, type, duration }]);
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, duration);
+    setToasts((prev) => [...prev, { id, message, type, duration, position }]);
   }, []);
 
   const removeToast = useCallback((id: string) => {
@@ -81,31 +98,68 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 }
 
 function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast: (id: string) => void }) {
+  // Group toasts by position
+  const groupedToasts = toasts.reduce((acc, toast) => {
+    const position = toast.position || 'bottom-right';
+    if (!acc[position]) acc[position] = [];
+    acc[position].push(toast);
+    return acc;
+  }, {} as Record<ToastPosition, Toast[]>);
+
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3">
-      {toasts.map((toast) => (
+    <div className="fixed inset-0 z-50 pointer-events-none">
+      {Object.entries(groupedToasts).map(([position, positionToasts]) => (
         <div
-          key={toast.id}
+          key={position}
           className={cn(
-            'flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg min-w-[320px] max-w-[420px] border-l-4 animate-slide-up',
-            colors[toast.type]
+            'absolute flex flex-col gap-3 pointer-events-auto',
+            positionClasses[position as ToastPosition]
           )}
         >
-          <span className="flex-shrink-0">{icons[toast.type]}</span>
-          <span className="flex-1 text-sm font-medium">{toast.message}</span>
-          <button
-            onClick={() => removeToast(toast.id)}
-            className="flex-shrink-0 text-white/80 hover:text-white transition-colors p-1"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
+          {positionToasts.map((toast) => (
+            <ToastItem
+              key={toast.id}
+              toast={toast}
+              removeToast={removeToast}
+              animationClass={animationClasses[position as ToastPosition]}
+            />
+          ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+function ToastItem({ toast, removeToast, animationClass }: { toast: Toast; removeToast: (id: string) => void; animationClass: string }) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      removeToast(toast.id);
+    }, toast.duration || 4000);
+
+    return () => clearTimeout(timer);
+  }, [toast.id, toast.duration, removeToast]);
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg min-w-[320px] max-w-[420px] border-l-4',
+        animationClass,
+        colors[toast.type]
+      )}
+    >
+      <span className="flex-shrink-0">{icons[toast.type]}</span>
+      <span className="flex-1 text-sm font-medium">{toast.message}</span>
+      <button
+        onClick={() => removeToast(toast.id)}
+        className="flex-shrink-0 text-white/80 hover:text-white transition-colors p-1"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
     </div>
   );
 }

@@ -5,10 +5,11 @@ import { cn } from '@/lib/utils';
 
 interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
   variant?: 'text' | 'circular' | 'rectangular';
+  shimmer?: boolean;
 }
 
 export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
-  ({ className, variant = 'rectangular', ...props }, ref) => {
+  ({ className, variant = 'rectangular', shimmer = true, ...props }, ref) => {
     const variants = {
       text: 'h-4 w-full rounded-md',
       circular: 'rounded-full',
@@ -19,7 +20,8 @@ export const Skeleton = forwardRef<HTMLDivElement, SkeletonProps>(
       <div
         ref={ref}
         className={cn(
-          'animate-pulse bg-gradient-to-r from-[var(--gray-200)] via-[var(--gray-100)] to-[var(--gray-200)] bg-[length:200%_100%]',
+          shimmer && 'animate-shimmer bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]',
+          !shimmer && 'animate-pulse bg-muted',
           variants[variant],
           className
         )}

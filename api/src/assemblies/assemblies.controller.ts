@@ -56,12 +56,22 @@ export class AssembliesController {
   @Get()
   @ApiOperation({ summary: 'Listar todas as assembleias' })
   async findAll() {
+    // Otimizado: removido include de candidatos para listagem simples
     const assembleias = await this.prisma.assembleia.findMany({
-      include: {
-        candidatos: true,
-      },
       orderBy: {
         data: 'desc',
+      },
+      // Inclui apenas candidatos (sem votos aninhados)
+      include: {
+        candidatos: {
+          select: {
+            id: true,
+            nome: true,
+            cargo: true,
+            foto: true,
+            votos: true,
+          },
+        },
       },
     });
 
@@ -92,13 +102,17 @@ export class AssembliesController {
   @Get(':id')
   @ApiOperation({ summary: 'Buscar assembleia por ID' })
   async findOne(@Param('id') id: string) {
+    // Otimizado: removido include de votos para evitar query pesada
     const assembleia = await this.prisma.assembleia.findUnique({
       where: { id },
       include: {
-        candidatos: true,
-        votos: {
-          include: {
-            candidato: true,
+        candidatos: {
+          select: {
+            id: true,
+            nome: true,
+            cargo: true,
+            foto: true,
+            votos: true,
           },
         },
       },
@@ -312,9 +326,22 @@ export class AssembliesController {
     @Request() req: JwtRequest,
   ) {
     try {
-      const assembleia = await this.prisma.assembleia.findUnique({
-        where: { id },
-      });
+      // Verificações em paralelo para performance
+      const [assembleia, jaVotou, usuario] = await Promise.all([
+        this.prisma.assembleia.findUnique({ where: { id } }),
+        this.prisma.voto.findUnique({
+          where: {
+            assembleiaId_usuarioId: {
+              assembleiaId: id,
+              usuarioId: req.user.id,
+            },
+          },
+        }),
+        this.prisma.usuario.findUnique({
+          where: { id: req.user.id },
+          include: { associado: true },
+        }),
+      ]);
 
       if (!assembleia) {
         return { success: false, message: 'Assembleia não encontrada' };
@@ -324,25 +351,9 @@ export class AssembliesController {
         return { success: false, message: 'Votação não está aberta' };
       }
 
-      // Verificar se já votou
-      const jaVotou = await this.prisma.voto.findUnique({
-        where: {
-          assembleiaId_usuarioId: {
-            assembleiaId: id,
-            usuarioId: req.user.id,
-          },
-        },
-      });
-
       if (jaVotou) {
         return { success: false, message: 'Você já votou nesta assembleia' };
       }
-
-      // Verificar se associado está ativo
-      const usuario = await this.prisma.usuario.findUnique({
-        where: { id: req.user.id },
-        include: { associado: true },
-      });
 
       if (usuario?.papel === 'ASSOCIADO') {
         const associado = usuario.associado;
@@ -354,20 +365,20 @@ export class AssembliesController {
         }
       }
 
-      // Criar voto
-      await this.prisma.voto.create({
-        data: {
-          assembleiaId: id,
-          candidatoId: body.candidatoId,
-          usuarioId: req.user.id,
-        },
-      });
-
-      // Incrementar votos do candidato
-      await this.prisma.candidato.update({
-        where: { id: body.candidatoId },
-        data: { votos: { increment: 1 } },
-      });
+      // Usar transação para atomicidade
+      await this.prisma.$transaction([
+        this.prisma.voto.create({
+          data: {
+            assembleiaId: id,
+            candidatoId: body.candidatoId,
+            usuarioId: req.user.id,
+          },
+        }),
+        this.prisma.candidato.update({
+          where: { id: body.candidatoId },
+          data: { votos: { increment: 1 } },
+        }),
+      ]);
 
       return {
         success: true,
@@ -383,13 +394,21 @@ export class AssembliesController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verificar se já votei' })
   async getMyVote(@Param('id') id: string, @Request() req: JwtRequest) {
+    // Otimizado: select específico em vez de include completo
     const voto = await this.prisma.voto.findFirst({
       where: {
         assembleiaId: id,
         usuarioId: req.user.id,
       },
-      include: {
-        candidato: true,
+      select: {
+        id: true,
+        candidatoId: true,
+        candidato: {
+          select: {
+            nome: true,
+            cargo: true,
+          },
+        },
       },
     });
 

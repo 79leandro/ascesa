@@ -155,7 +155,10 @@ export default function AdminAssembliesPage() {
     try {
       const response = await api.patch(`/assemblies/${id}/iniciar`);
       if (response.success) {
-        fetchAssemblies();
+        // Otimizado: atualiza estado local sem novo fetch
+        setAssemblies(assemblies.map(a =>
+          a.id === id ? { ...a, status: 'EM_ANDAMENTO' } : a
+        ));
         if (selectedAssembly?.id === id) {
           setSelectedAssembly({ ...selectedAssembly, status: 'EM_ANDAMENTO' });
         }
@@ -169,7 +172,10 @@ export default function AdminAssembliesPage() {
     try {
       const response = await api.patch(`/assemblies/${id}/encerrar`);
       if (response.success) {
-        fetchAssemblies();
+        // Otimizado: atualiza estado local sem novo fetch
+        setAssemblies(assemblies.map(a =>
+          a.id === id ? { ...a, status: 'ENCERRADA' } : a
+        ));
         if (selectedAssembly?.id === id) {
           setSelectedAssembly({ ...selectedAssembly, status: 'ENCERRADA' });
         }
