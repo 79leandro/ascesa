@@ -1,38 +1,42 @@
+import { CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
+
 interface StatusBadgeProps {
   status: string;
   label?: string;
   onClick?: () => void;
 }
 
-const statusConfig: Record<string, { color: string; label: string }> = {
-  ATIVO: { color: 'bg-green-100 text-green-800', label: 'Ativo' },
-  INATIVO: { color: 'bg-red-100 text-red-800', label: 'Inativo' },
-  PENDENTE: { color: 'bg-yellow-100 text-yellow-800', label: 'Pendente' },
-  ACTIVE: { color: 'bg-green-100 text-green-800', label: 'Ativo' },
-  INACTIVE: { color: 'bg-red-100 text-red-800', label: 'Inativo' },
-  PENDING: { color: 'bg-yellow-100 text-yellow-800', label: 'Pendente' },
-  APROVADO: { color: 'bg-green-100 text-green-800', label: 'Aprovado' },
-  REJEITADO: { color: 'bg-red-100 text-red-800', label: 'Rejeitado' },
-  APPROVED: { color: 'bg-green-100 text-green-800', label: 'Aprovado' },
-  REJECTED: { color: 'bg-red-100 text-red-800', label: 'Rejeitado' },
-  PAGO: { color: 'bg-green-100 text-green-800', label: 'Pago' },
-  ATRASADO: { color: 'bg-red-100 text-red-800', label: 'Atrasado' },
-  PAID: { color: 'bg-green-100 text-green-800', label: 'Pago' },
-  OVERDUE: { color: 'bg-red-100 text-red-800', label: 'Atrasado' },
+const statusConfig: Record<string, { bg: string; text: string; icon: any; label: string }> = {
+  ATIVO: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: CheckCircle, label: 'Ativo' },
+  INATIVO: { bg: 'bg-red-50', text: 'text-red-700', icon: XCircle, label: 'Inativo' },
+  PENDENTE: { bg: 'bg-amber-50', text: 'text-amber-700', icon: Clock, label: 'Pendente' },
+  ACTIVE: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: CheckCircle, label: 'Ativo' },
+  INACTIVE: { bg: 'bg-red-50', text: 'text-red-700', icon: XCircle, label: 'Inativo' },
+  PENDING: { bg: 'bg-amber-50', text: 'text-amber-700', icon: Clock, label: 'Pendente' },
+  APROVADO: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: CheckCircle, label: 'Aprovado' },
+  REJEITADO: { bg: 'bg-red-50', text: 'text-red-700', icon: XCircle, label: 'Rejeitado' },
+  APPROVED: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: CheckCircle, label: 'Aprovado' },
+  REJECTED: { bg: 'bg-red-50', text: 'text-red-700', icon: XCircle, label: 'Rejeitado' },
+  PAGO: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: CheckCircle, label: 'Pago' },
+  ATRASADO: { bg: 'bg-red-50', text: 'text-red-700', icon: AlertCircle, label: 'Atrasado' },
+  PAID: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: CheckCircle, label: 'Pago' },
+  OVERDUE: { bg: 'bg-red-50', text: 'text-red-700', icon: AlertCircle, label: 'Atrasado' },
 };
 
 export function StatusBadge({ status, label, onClick }: StatusBadgeProps) {
-  const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800', label: label || status };
+  const config = statusConfig[status] || { bg: 'bg-gray-50', text: 'text-gray-700', icon: Clock, label: label || status };
+  const Icon = config.icon;
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`px-2 py-1 rounded-full text-xs font-medium ${config.color} ${
-        onClick ? 'cursor-pointer hover:opacity-80' : 'cursor-default'
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${config.bg} ${config.text} ${
+        onClick ? 'cursor-pointer hover:opacity-80 hover:scale-105 transition-all duration-200' : 'cursor-default'
       }`}
       disabled={!onClick}
     >
+      <Icon className="w-3.5 h-3.5" />
       {label || config.label}
     </button>
   );

@@ -16,6 +16,7 @@ import {
   VALIDATION,
   ERROR_MESSAGES,
 } from '@/lib/validations';
+import { Sparkles, User, Mail, Phone, Calendar, Briefcase, MapPin, Lock, ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -127,31 +128,50 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Faça seu Cadastro</CardTitle>
-            <CardDescription>
-              Preencha os dados abaixo para se tornar um associado ASCESA
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
+      {/* Background decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 -right-32 w-64 h-64 bg-[var(--secondary)]/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-1/4 -left-32 w-96 h-96 bg-[var(--primary)]/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="max-w-2xl w-full relative z-10">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[var(--primary)] to-[var(--secondary)] rounded-2xl mb-4 shadow-lg">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-[var(--foreground)] mb-2">
+            Faça seu Cadastro
+          </h1>
+          <p className="text-[var(--muted-foreground)]">
+            Preencha os dados abaixo para se tornar um associado ASCESA
+          </p>
+        </div>
+
+        <Card className="shadow-xl border-0">
+          <div className="h-1 bg-gradient-to-r from-[var(--primary)] via-[var(--secondary)] to-[var(--accent)]"></div>
+          <CardContent className="p-8">
             {errors.form && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
+                <span className="text-lg">⚠️</span>
                 {errors.form}
               </div>
             )}
             {successMessage && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm">
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-600 text-sm flex items-center gap-2">
+                <CheckCircle className="w-5 h-5" />
                 {successMessage}
               </div>
             )}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Dados Pessoais */}
-              <div className="border-b pb-4 mb-4">
-                <h3 className="font-semibold mb-3 text-[var(--foreground)]">Dados Pessoais</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border-b border-[var(--border)] pb-6">
+                <h3 className="font-bold mb-4 text-[var(--foreground)] flex items-center gap-2">
+                  <User className="w-5 h-5 text-[var(--primary)]" />
+                  Dados Pessoais
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <Input
                     label="Nome Completo"
                     placeholder="Seu nome completo"
@@ -188,9 +208,12 @@ export default function RegisterPage() {
               </div>
 
               {/* Contato */}
-              <div className="border-b pb-4 mb-4">
-                <h3 className="font-semibold mb-3 text-[var(--foreground)]">Contato</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border-b border-[var(--border)] pb-6">
+                <h3 className="font-bold mb-4 text-[var(--foreground)] flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-[var(--primary)]" />
+                  Contato
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <Input
                     label="Email"
                     type="email"
@@ -214,9 +237,12 @@ export default function RegisterPage() {
               </div>
 
               {/* Endereço */}
-              <div className="border-b pb-4 mb-4">
-                <h3 className="font-semibold mb-3 text-[var(--foreground)]">Endereço</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="border-b border-[var(--border)] pb-6">
+                <h3 className="font-bold mb-4 text-[var(--foreground)] flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-[var(--primary)]" />
+                  Endereço
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <Input
                     label="Endereço"
                     placeholder="Rua, número, bairro"
@@ -242,8 +268,11 @@ export default function RegisterPage() {
 
               {/* Senha */}
               <div>
-                <h3 className="font-semibold mb-3 text-[var(--foreground)]">Segurança</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <h3 className="font-bold mb-4 text-[var(--foreground)] flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-[var(--primary)]" />
+                  Segurança
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <Input
                     label="Senha"
                     type="password"
@@ -272,8 +301,8 @@ export default function RegisterPage() {
               </div>
 
               {/* LGPD Consent */}
-              <div className="border-t pt-4">
-                <label className="flex items-start gap-3 cursor-pointer">
+              <div className="border-t border-[var(--border)] pt-6">
+                <label className="flex items-start gap-3 cursor-pointer p-4 bg-[var(--gray-50)] rounded-xl hover:bg-[var(--gray-100)] transition-colors">
                   <input
                     type="checkbox"
                     checked={formData.lgpdConsent}
@@ -285,28 +314,33 @@ export default function RegisterPage() {
                   />
                   <span className="text-sm text-[var(--muted-foreground)]">
                     Eu li e concordo com os{' '}
-                    <Link href="/terms" target="_blank" className="text-[var(--secondary)] hover:underline">
+                    <Link href="/terms" target="_blank" className="text-[var(--secondary)] hover:underline font-medium">
                       Termos de Uso
                     </Link>{' '}
                     e a{' '}
-                    <Link href="/privacy" target="_blank" className="text-[var(--secondary)] hover:underline">
+                    <Link href="/privacy" target="_blank" className="text-[var(--secondary)] hover:underline font-medium">
                       Política de Privacidade
                     </Link>
                     . Estou ciente de que meus dados serão tratados em conformidade com a LGPD.
                   </span>
                 </label>
                 {errors.lgpdConsent && (
-                  <p className="text-red-500 text-sm mt-1">{errors.lgpdConsent}</p>
+                  <p className="text-red-500 text-sm mt-2 ml-1">{errors.lgpdConsent}</p>
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Cadastrando...' : 'Finalizar Cadastro'}
+              <Button type="submit" className="w-full py-3 text-base" disabled={loading}>
+                {loading ? 'Cadastrando...' : (
+                  <>
+                    Finalizar Cadastro
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
               </Button>
 
               <p className="text-center text-sm text-[var(--muted-foreground)]">
                 Já tem conta?{' '}
-                <Link href={APP_ROUTES.login} className="text-[var(--secondary)] hover:underline">
+                <Link href={APP_ROUTES.login} className="text-[var(--secondary)] hover:underline font-semibold">
                   Fazer Login
                 </Link>
               </p>

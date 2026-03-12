@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Header, Footer } from "@/components/ui";
 import { ToastProvider } from "@/components/ui/toast";
@@ -8,6 +8,11 @@ import { AuthProvider } from "@/hooks/useAuthContext";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+});
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  variable: "--font-plus-jakarta",
 });
 
 export const metadata: Metadata = {
@@ -69,7 +74,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${plusJakarta.variable} ${inter.variable} font-sans antialiased`}>
         <ToastProvider>
           <AuthProvider>
             <div className="flex min-h-screen flex-col">

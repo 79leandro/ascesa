@@ -28,16 +28,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             className={cn(
-              'w-full px-4 py-2.5 rounded-lg border bg-[var(--background)] text-[var(--foreground)]',
-              'border-[var(--border)] transition-all duration-200',
-              'focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)] focus:ring-opacity-20',
+              'w-full px-4 py-3 rounded-xl border bg-[var(--background)] text-[var(--foreground)]',
+              'border-[var(--border)] transition-all duration-300',
+              'focus:border-[var(--ring)] focus:ring-2 focus:ring-[var(--ring)] focus:ring-opacity-20 focus:shadow-lg',
               'outline-none',
               'placeholder:text-[var(--muted-foreground)]',
               'disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-[var(--gray-100)]',
-              'hover:border-[var(--gray-300)]',
+              'hover:border-[var(--gray-300)] hover:shadow-sm',
               error ? 'border-[var(--error)] focus:border-[var(--error)] focus:ring-[var(--error)] focus:ring-opacity-20' : '',
-              iconLeft ? 'pl-10' : '',
-              iconRight ? 'pr-10' : '',
+              iconLeft ? 'pl-11' : '',
+              iconRight ? 'pr-11' : '',
+              'input-enhanced',
               className
             )}
             {...props}

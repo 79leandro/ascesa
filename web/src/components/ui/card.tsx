@@ -12,7 +12,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
   ({ className = '', variant = 'default', hover = false, children, ...props }, ref) => {
     const variants = {
       default: 'border-[var(--border)] shadow-sm',
-      elevated: 'border-transparent shadow-lg hover:shadow-xl',
+      elevated: 'border-transparent shadow-lg hover:shadow-2xl transition-all duration-300',
       outlined: 'border-[var(--border)] shadow-none',
     };
 
@@ -20,9 +20,9 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'rounded-xl bg-[var(--card)] text-[var(--card-foreground)] transition-all duration-200',
+          'rounded-2xl bg-[var(--card)] text-[var(--card-foreground)] transition-all duration-300',
           variants[variant],
-          hover && 'hover:scale-[1.01] cursor-pointer',
+          hover && 'hover:scale-[1.02] hover:-translate-y-1 cursor-pointer hover:shadow-xl card-glow',
           className
         )}
         {...props}
